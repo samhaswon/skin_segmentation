@@ -30,6 +30,8 @@ Off I set to create a dataset of training images. It took a few weeks, maybe a m
 
 A few weeks of figuring out training further and I ended up with a few models. They are refined to the following input resolutions: 320x320, 512x512, and 1024x1024. Probably the best to use of these is the 512x512 model as it is a good balance of memory and the fit of the model.
 
+Each model can be found in the [`Releases`](https://github.com/samhaswon/skin_segmentation/releases) tab in GitHub.
+
 ### Examples
 
 <img src="./examples/S2563713746_St25_G7.5.jpeg" style="width: 50%"><img src="./examples/woman.png" style="width: 50%">
