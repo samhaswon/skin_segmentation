@@ -28,6 +28,8 @@ So, after weeks of research, I settled on the [U<sup>2</sup>-Net](https://github
 
 Off I set to create a dataset of training images. It took a few weeks, maybe a month, but I had my dataset. I used [rembg-trainer](https://github.com/Jonathunky/rembg-trainer) initially, but my limited compute meant the code did not work well on my system. Lots of changes later and I had functioning code, a dataset, and a GPU to train it on. 
 
+My CUDA optimizations can be found [here](https://github.com/samhaswon/rembg-trainer-cuda) if you wish to train your own model. 
+
 A few weeks of figuring out training further and I ended up with a few models. They are refined to the following input resolutions: 320x320, 512x512, and 1024x1024. Probably the best to use of these is the 512x512 model as it is a good balance of memory and the fit of the model.
 
 Each model can be found in the [`Releases`](https://github.com/samhaswon/skin_segmentation/releases) tab in GitHub.
