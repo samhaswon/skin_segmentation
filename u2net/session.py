@@ -13,12 +13,12 @@ Basically, I removed a lot of conversions and made this compatible with my model
 
 class Session:
     def __init__(
-            self,
-            model_path: str,
-            sess_opts: Union[ort.SessionOptions, None] = None,
-            providers=None
+        self,
+        model_path: str,
+        sess_opts: Union[ort.SessionOptions, None] = None,
+        providers=None
     ):
-        """Initialize an instance of the BaseSession class."""
+        """Initialize an instance of the Session class."""
 
         self.providers = []
 
@@ -37,28 +37,37 @@ class Session:
         )
 
     def normalize(
-            self,
-            img: Image,
-            size: Tuple[int, int],
+        self,
+        img: Image,
+        size: Union[Tuple[int, int], None] = None,
+        convert_to: str = "RGB"
     ) -> Dict[str, np.ndarray]:
-        im = img.convert("RGB").resize(size, Image.LANCZOS)
+        """
+        Normalize and prepare the image for inferencing.
+        :param img: The (PIL) Image to repair.
+        :param size: The size for inferencing (if not index 2 and 3 of the input shape).
+        :param convert_to: The color format to convert the image into (if it even matters).
+        :return: The prepared image for ONNX inferencing.
+        """
+        if size is None:
+            size = self.inner_session.get_inputs()[0].shape[2], self.inner_session.get_inputs()[0].shape[3]
+        im = img.convert(convert_to).resize(size, Image.LANCZOS)
 
-        im_ary = np.array(im)
-        im_ary = im_ary / np.max(im_ary)
+        im_ary = np.array(im).astype(np.float32)
+        im_ary = (im_ary - np.min(im_ary)) / (np.max(im_ary) - np.min(im_ary))
 
         tmp_img = im_ary.transpose((2, 0, 1))
 
         return {
             self.inner_session.get_inputs()[0]
             .name: np.expand_dims(tmp_img, 0)
-            .astype(np.float32)
         }
 
-    def predict(self, img: PILImage, size: Tuple[int, int] = (320, 320)) -> np.ndarray:
+    def predict(self, img: PILImage, size: Union[Tuple[int, int], None] = None) -> np.ndarray:
         """
         Predicts the output mask for the input image using the loaded model.
         :param img: The image to inference on.
-        :param size: The prediction size.
+        :param size: The prediction size (if not index 2 and 3 of the input shape).
         :return: Prediction mask (numpy.ndarray)
         """
         ort_outs = self.inner_session.run(
@@ -103,20 +112,25 @@ class Session:
 
     @staticmethod
     def post_process(mask: np.ndarray) -> np.ndarray:
+        """
+        Morphs and blurs the mask to make it a bit better (generally speaking).
+        :param mask: The mask to post-process.
+        :return: The post-processed mask.
+        """
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
-        mask = cv2.GaussianBlur(mask, (9, 9), sigmaX=2, sigmaY=2, borderType=cv2.BORDER_DEFAULT)
+        mask = cv2.GaussianBlur(mask, (9, 9),  sigmaX=2, sigmaY=2, borderType=cv2.BORDER_DEFAULT)
         return mask
 
     def remove(
             self,
             img: PILImage,
-            size: Tuple[int, int] = (320, 320),
+            size: Union[Tuple[int, int], None] = None,
             mask_only: bool = False
     ) -> PILImage:
         """
         Segment an input image.
         :param img: Image to segment.
-        :param size: Inferencing size.
+        :param size: The inferencing size (if not index 2 and 3 of the input shape).
         :param mask_only: Whether to return only the mask or a cutout.
         :return: Segmented image or mask
         """
