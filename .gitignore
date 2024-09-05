@@ -1,2 +1,4 @@
 .vscode
 *.onnx
+*__pycache__/
+*venv*
