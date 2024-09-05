@@ -30,7 +30,7 @@ Off I set to create a dataset of training images. It took a few weeks, maybe a m
 
 My CUDA optimizations can be found [here](https://github.com/samhaswon/rembg-trainer-cuda) if you wish to train your own model. 
 
-A few weeks of figuring out training further and I ended up with a few models. They are refined to the following input resolutions: 320x320, 512x512, and 1024x1024. Probably the best to use of these is the 512x512 model as it is a good balance of memory and the fit of the model.
+A few weeks of figuring out training further and I ended up with a few models. They are refined to 512x512 (U<sup>2</sup>-Netp) and 1024x1024 (U<sup>2</sup>-Net). Probably the best to use of these is the 512x512 model as it is a good balance of memory and the fit of the model while also being fast for CPU inferencing. 
 
 Each model can be found in the [`Releases`](https://github.com/samhaswon/skin_segmentation/releases) tab in GitHub.
 
