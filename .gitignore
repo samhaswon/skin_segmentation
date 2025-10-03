@@ -2,3 +2,5 @@
 *.onnx
 *__pycache__/
 *venv*
+*pth
+.idea/*
