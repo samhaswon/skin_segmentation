@@ -41,7 +41,8 @@ def colorize_and_overlay(base: Image.Image, model_out: Image.Image) -> Image.Ima
 def run_and_plot(
     image_path_list: List[str],
     model_paths: List[str],
-    session_factory
+    session_factory,
+    out_path: str = "../examples/model_plot.jpg",
 ) -> None:
     """Run inference for each model on each input image and plot results in one figure.
 
@@ -131,7 +132,7 @@ def run_and_plot(
     plt.tight_layout()
     plt.subplots_adjust(left=0.05)
 
-    plt.savefig("../examples/model_plot.jpg", dpi=300)
+    plt.savefig(out_path, dpi=300)
     # plt.show()
 
 
@@ -149,7 +150,7 @@ if __name__ == "__main__":
 
     # Models to evaluate
     models = [
-        "/home/samuel/ai_data/skin_models/BiRefNet/birefnet_skin.onnx",
+        "/home/samuel/ai_data/skin_models/BiRefNet/birefnet.onnx",
         "/home/samuel/ai_data/skin_models/new/u2net.onnx",
         "/home/samuel/ai_data/skin_models/newp/u2netp.onnx",
         "/home/samuel/ai_data/skin_models/dlmv/dlmv.onnx",
