@@ -7,7 +7,7 @@ import numpy as np
 
 def segment_skin_ycbcr(image_rgb: np.ndarray,
                        cb_range: tuple[int, int] = (85, 135),
-                       cr_range: tuple[int, int] = (135, 180)) -> np.ndarray:
+                       cr_range: tuple[int, int] = (137, 180)) -> np.ndarray:
     """
     Segment likely skin pixels using YCbCr thresholds, then post-process.
 
