@@ -10,7 +10,7 @@ you can use the `Session` class in [`u2net/session.py`](./u2net/session.py) for 
 
 Trying to figure out which model to use?
 Try looking at [mIoU](#miou) and [Inference Time](#inference-time) and choose 
-the most accurate model within your computing environment.
+the most accurate model within your computing environment's budget.
 
 ## Traditional
 
@@ -92,7 +92,7 @@ It's getting to the point of measuring how well the model follows my own varianc
 rather than purely how usable a particular model is for the task.
 I try to stay consistent as I've made the dataset for this, 
 but this model is really showing how nondeterministic I am as a human.
-I would estimate that there's about 0.5-1% variation in exactly what value is given for a particular pixel,
+I would estimate that there's about 0.5-1% average variation in exactly what value is given for a particular pixel,
 mostly from me dealing with JPG compression artifacting in the images.
 
 Then there's the really difficult part of skin segmentation: translucent occlusion. 
@@ -132,7 +132,7 @@ The dataset used in this project consists of 1,165 images (1,134 training) with 
 total of approximately 6.26 × 10⁹ labeled pixels. 
 Images were sourced from a variety of online 
 (e.g., Google Image search results, Instagram) and private 
-(e.g., my photography work) collections to maximize diversity of scene, 
+(e.g., my photography work, diffusion models) collections to maximize diversity of scene, 
 lighting, and skin appearance.
 
 A small portion of the dataset includes AI-generated images
@@ -238,8 +238,11 @@ Augmentation steps include:
 - **Sepia filtering**: Applies varying degrees of sepia toning, 
   mimicking the look of old or filtered photographs, which can alter 
   apparent skin color and contrast.
+
+    - My implementation technically swaps blue and red, so it is more bluish than yellowed.
+
 - **Subject occlusion**: A regular lattice pattern is generated, 
-  then randomly rotated within a 0–90° range. 
+  then randomly rotated within a 0-90° range. 
   This rotated lattice is superimposed on the subject within the image, partially obscuring them. 
   The approach simulates realistic visual obstructions while preserving background and contextual 
   cues, forcing models to learn more robust representations under occlusion. 
@@ -333,7 +336,7 @@ though either U<sup>2</sup>Net or U<sup>2</sup>NetP may do well with the next lo
 
 | Model                                      | 256x256 | 320x320 | 512x512 | 1024x1024 | 1280x1280 | 1728x1728 | 2048x2048 |
 |:-------------------------------------------|:--------|:--------|:--------|:----------|:----------|:----------|:----------|
-| BiRefNet(\_lite) (torch)                   | <hr>    | <hr>    | <hr>    | 11.9498s  | 14.5727s  | 27.5174s  | 61.1317s  |
+| BiRefNet(\_lite) (torch)                   | 0.6125s | 0.8687s | 2.6037s | 11.9498s  | 14.5727s  | 27.5174s  | 61.1317s  |
 | BiRefNet(\_lite) (onnxruntime)             | <hr>    | <hr>    | <hr>    | <hr>      | <hr>      | 18.8971s  | <hr>      |
 | U<sup>2</sup>Net (torch)                   | 0.3108s | 0.4828s | 1.2603s | 5.5562s   | <hr>      | <hr>      | <hr>      |
 | U<sup>2</sup>Net (`torch.compile`)         | 0.2170s | 0.4269s | 1.2449s | 5.6484s   | <hr>      | <hr>      | <hr>      |
@@ -370,5 +373,11 @@ As an example, where does the background start here:
 
 Other error sources are related to the limited spatial context available to CNNs.
 For more ambiguous cases or where broader scene understanding is necessary,
-transformer-based architectures may offer a marginal improvement,
-but gains are likely small compared to the challenge posed by inherently ambiguous boundaries.
+transformer-based architectures offer a marginal improvement,
+but gains are relatively small compared to the challenge posed by inherently ambiguous boundaries.
+
+It is possible that larger transformer-based models can perform better (e.g., the larger BiRefNet models), 
+but gains are likely to be small.
+Excluding transparent occlusion, which is comparatively underrepresented, 
+U<sup>2</sup>Net and BiRefNet perform somewhat comparably on this task both quantitatively and qualitatively.
+Outside more difficult areas of an image, the difference between the two is primarily a matter of precision.
