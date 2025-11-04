@@ -14,7 +14,7 @@ the most accurate model within your computing environment.
 
 ## Traditional
 
-There are two methods in this folder that are doing roughly the same thing.
+There are three methods in this folder that are doing roughly the same thing.
 
 The first is in [hsv_range.py](traditional/hsv_range.py). 
 This gives the user an interface to adjust various thresholds to make a more 
@@ -24,7 +24,10 @@ The second is in [face_skin.py](traditional/face_skin.py).
 It detects the face in an image and automatically adjusts the thresholds based 
 upon the data in that area.
 
-Neither method was accurate enough for me. 
+Third is in [ycbcr_method](./traditional/ycbcr_method.py).
+It effectively works the same as the HSV method (if automated), but in the YCbCr color space.
+
+None of these methods were accurate enough for me. 
 They are good if you need something fast and possibly in the ballpark. 
 I even attempted to use both HSV color ranges and YCbCr ranges to no avail. 
 Therefore, I went to the next part.
@@ -32,7 +35,7 @@ Therefore, I went to the next part.
 ## Google
 
 This is a very basic implementation of skin segmentation utilizing Google's MediaPipe model. 
-A list of models can be found [here](https://developers.google.com/mediapipe/solutions/vision/image_segmenter#selfie-model), but I used the Selfie segmentation model. 
+A list of models can be found [here](https://ai.google.dev/edge/mediapipe/solutions/vision/image_segmenter#multiclass-model), but I used the Selfie segmentation model. 
 
 It worked ok when it did work. 
 Often, the prediction would have extremely low confidence across an entire image. 
@@ -55,7 +58,6 @@ It took a few weeks, maybe a month, but I had my dataset.
 I used [rembg-trainer](https://github.com/Jonathunky/rembg-trainer) initially, 
 but my limited compute meant the code did not work well on my system. 
 Lots of changes later and I had functioning code, a dataset, and a GPU to train it on. 
-
 My CUDA optimizations can be found [here](https://github.com/samhaswon/rembg-trainer-cuda) if you wish to train your own model. 
 
 A few weeks of figuring out training further and I ended up with a few models. 
@@ -73,6 +75,34 @@ It's better than the Google model I tested for this, but that's not saying much.
 
 The `Session` class in [`./u2net/session.py`](./u2net/session.py) can also be used for this model.
 
+## BiRefNet
+
+I came across [BiRefNet](https://github.com/ZhengPeng7/BiRefNet) while trying to find something else. 
+It's a good model, but incredibly difficult to work with from a memory perspective.
+Needless to say, I learned some new techniques to even train the "lite" variant for skin segmentation.
+I couldn't fit half of the model (at 1728x1728) on my RTX 3060, 
+so it took some creative programming to split it while maintaining some measure of training speed.
+
+Inference is a bit of a different story, with PyTorch only using something like 6GB of memory/VRAM.
+However, as a word of warning, the ONNX version takes ~**40GB** of memory for some reason. 
+Depending on how much you value inference speed, you may consider this tradeoff worth it.
+
+In my testing, it is the new SOTA for this task, though by a limited margin. 
+It's getting to the point of measuring how well the model follows my own variance, 
+rather than purely how usable a particular model is for the task.
+I try to stay consistent as I've made the dataset for this, 
+but this model is really showing how nondeterministic I am as a human.
+I would estimate that there's about 0.5-1% variation in exactly what value is given for a particular pixel,
+mostly from me dealing with JPG compression artifacting in the images.
+
+Then there's the really difficult part of skin segmentation: translucent occlusion. 
+This is where BiRefNet pulls ahead of the other models as it is better at handling something translucent partially obscuring skin.
+This is just difficult to deal with, but BiRefNet handles it fairly well. 
+As of writing this, there is one instance of translucent occlusion in the evaluation set 
+that dramatically decreases the mIoU of most models and methods except 
+HSV + YCbCr, Elliptical YCbCr, and ICM.
+HSV + YCbCr and ICM actually went up in mIoU and Elliptical YCbCr decreased slightly.
+
 ## Examples
 
 ![](./examples/model_plot.jpg)
@@ -80,17 +110,26 @@ The `Session` class in [`./u2net/session.py`](./u2net/session.py) can also be us
 As you can see, it's not perfect. 
 But it's rather usable. 
 The 512x512 U<sup>2</sup>NetP model tends to not be confident about things that are not skin, 
-so it produces more accurate but less precise results than U<sup>2</sup>Net. 
+so it produces more accurate but less precise results than U<sup>2</sup>Net at times. 
+However, some things like the book in one of the examples invert this tendency.
 For all models, groups are an issue as they are not prevalent in the dataset.
+
+It's not shown particularly well in this set of examples, 
+but BiRefNet mostly does better with edges and areas of the image requiring more context.
+This comes into play most with images with significant areas where the subject is occluded or otherwise obscured.
+The fishnets example is there for this reason as that used to confuse all the models for that entire region.
+New [augmentations](#dataset-augmentation) have helped with this.
+Turns out, instead of dealing with doing them by hand, it's fairly effective to do it programmatically.
 
 And to show what the models do when there is no skin in the image, there's the cheeseburger.
 In the past, the models would classify random parts of the bun as "skin," 
-but dataset volume and augmentations seem to have reduced that effect.
+but dataset volume and augmentations seem to have reduced that effect 
+and introduced new model-specific idiosyncrasies.
 
 ## Dataset Information
 
-The dataset used in this project consists of 1,134 images with a combined 
-total of approximately 5.86 × 10⁹ labeled pixels. 
+The dataset used in this project consists of 1,165 images (1,134 training) with a combined 
+total of approximately 6.26 × 10⁹ labeled pixels. 
 Images were sourced from a variety of online 
 (e.g., Google Image search results, Instagram) and private 
 (e.g., my photography work) collections to maximize diversity of scene, 
@@ -109,18 +148,64 @@ Due to privacy and copyright concerns,
 the full dataset will not be made publicly available. 
 Aggregate statistics, summary figures, 
 and select non-sensitive samples are shared for illustration purposes.
+In the future, I may filter through the dataset to create a releasable version,
+but as it stands, I do not have the time to do so.
 
 ### Figures
 
-HSV Histograms:
+#### HSV Histograms:
 
-![Histogram of hue, saturation, and value from the dataset.](./examples/histograms.png)
+![Histograms of hue, saturation, and value from the dataset. This is a visual representation of the trends in the HSV color space in the dataset.](./examples/histograms_hsv.png)
 
 Hue makes a relatively clear distinction between skin and not. 
 However, saturation and value are spread out into more of a bell curve. 
 It is this that distinguishes AI models from the traditional methods: 
 they consider more than the values of a pixel.
 Instead, they can incorporate more context into their prediction.
+
+Red is used here to visualize the range of values used by the HSV method. 
+Clearly, the entire range of values of what is skin is used by the method. 
+This is part of the reason for the relatively poor performance of this method.
+However, due to the nature of the data and the trends therein, inclusion of more of each range yields **worse** performance.
+
+#### YCbCr Histograms:
+
+![Histograms of the Y (luma), Cb (blue-difference chroma), and Cr (red-difference chroma) in the dataset. This is a visual representation of the trends in the YCbCr color space in the dataset.](./examples/histograms_ycbcr.png)
+
+Red is once again used here to visualize the range of values used by the *thresholding* YCbCr method.
+In the case of YCbCr, this repository demonstrates two methods: thresholding and elliptical.
+As elliptical segmentation requires both Cb and Cr, 
+it cannot be easily visualized in this type of histogram.
+
+Separating the color into two components, as YCbCr does, gives slightly more data that is useful for skin segmentation.
+One notable thing the traditional YCbCr method does, at least in my implementation, is that it uses all luma (luminance) values.
+This is because how bright a particular pixel is does not help to distinguish between skin and not skin, 
+especially dependent upon the lighting of the image.
+
+![](./examples/cbcr_plane_Y255_region.png)
+![](./examples/elliptical_cbcr_plane_Y255_region.png)
+
+Now, let's take a slightly different look at the two color spaces. 
+Above are two images representing the part of the YCbCr color space considered skin by the two methods,
+with the luminance component (Y') set to 192 for positives and 0 for negatives.
+The box-shaped one is the simple threshold and the rounded one is the elliptical method.
+Both perform nearly the best for the traditional methods by incorporating only the important color information for the task.
+Additionally, both skew towards red like the HSV method.
+
+![](./examples/hist2d_cb_cr.png)
+
+Next, let's look at a histogram of the values of both Cb and Cr in the dataset.
+As you can see, there is a clear elliptical-ish shape near the middle.
+Around that is a less frequent area in an odd pattern that kind of looks like a fighter jet to me.
+Alternatively, you could view this as a terrain map for a single mountain on a flat plane.
+
+Considering this with CbCr planes from earlier, 
+we see how skin tends to be composed of red and yellow leaning colors, 
+along with a mix of others due to lighting conditions.
+If you recall from you childhood art classes, red and yellow make orange.
+And when you take orange and reduce its luminance, you get brown.
+Skew red for a more pinkish skin tone, 
+subtracting blue chroma (adding green) to get more of a yellowish skin tone (red + green = yellow in additive color).
 
 ### Dataset Augmentation
 
@@ -183,9 +268,15 @@ However, this is only used for training and not evaluation.
 
 FLOP count analysis was done with `fvcore`.
 Google (MediaPipe) is omitted due to its backend.
+Do note that this process is imperfect, with some unsupported operators in each model. 
+BiRefNet has the most, with the CNN-based models having only a few like sigmoid.
+Additionally, BiRefNet (BiRefNet_lite) was not trained at 2048x2048 due to VRAM constraints.
 
 |        Model         | Inference Size | GFLOPS  |   Params   |
 |:--------------------:|:--------------:|:-------:|:----------:|
+|    BiRefNet_lite     |      2048      | 931.572 | 44,313,720 |
+|    BiRefNet_lite     |      1728      | 658.997 | 44,313,720 |
+|    BiRefNet_lite     |      1440      | 459.547 | 44,313,720 |
 |   U<sup>2</sup>Net   |      1024      | 604.007 | 44,009,869 |
 |  U<sup>2</sup>NetP   |      1024      | 205.082 | 1,131,181  |
 |  U<sup>2</sup>NetP   |      512       | 51.271  | 1,131,181  |
@@ -228,9 +319,11 @@ so that is part of the worse performance you see here.
 | DeepLabV3MobileNetV3 | fbgemm (x86)        | 0.8624664545 |
 | DeepLabV3MobileNetV3 | qnnpack             | 0.8623675622 |
 
+\*Note: BiRefNet in FP32 takes ~14GB of memory with PyTorch, but ~40GB with onnxruntime at 1728x1728.
+
 ### Inference Time
 
-These results are from CPU inferencing on a Ryzen 7 4800H with an Nvidia GTX 1650TI for CUDA running Ubuntu 24.04.
+These results are from (mostly) CPU inferencing on a Ryzen 7 4800H with an Nvidia GTX 1650TI for CUDA running Ubuntu 24.04.
 They are intended to showcase relative performance and not the exact results you should expect. 
 No particular tuning was done to optimize performance other than what is stated.
 Furthermore, these tests are for speed and not model accuracy. 
@@ -238,25 +331,27 @@ U<sup>2</sup>Net is still going to do best with 1024x1024 inputs,
 U<sup>2</sup>NetP with 512x512, and DeepLabV3MobileNetV3 with 256x256,
 though either U<sup>2</sup>Net or U<sup>2</sup>NetP may do well with the next lowest resolution.
 
-| Model                                            | 256x256 | 320x320 | 512x512 | 1024x1024 |
-|:-------------------------------------------------|:--------|:--------|:--------|:----------|
-| U<sup>2</sup>Net (torch)                         | 0.3108s | 0.4828s | 1.2603s | 5.5562s   |
-| U<sup>2</sup>Net (`torch.compile`)               | 0.2170s | 0.4269s | 1.2449s | 5.6484s   |
-| U<sup>2</sup>Net (onnxruntime)                   | <hr>    | <hr>    | <hr>    | 3.0919s   |
-| U<sup>2</sup>Net (onnxruntime qnnpack)           | <hr>    | <hr>    | <hr>    | 2.9634s   |
-| U<sup>2</sup>Net (onnxruntime fbgemm)            | <hr>    | <hr>    | <hr>    | 2.9522s   |
-| U<sup>2</sup>Net (torch + CUDA)                  | <hr>    | <hr>    | <hr>    | 0.4711s   |
-| U<sup>2</sup>NetP (torch)                        | 0.1559s | 0.2331s | 0.7607s | 3.1737s   |
-| U<sup>2</sup>NetP (`torch.compile`)              | 0.0986s | 0.2029s | 0.6119s | 2.5031s   |
-| U<sup>2</sup>NetP (onnxruntime)                  | <hr>    | <hr>    | 0.3396s | <hr>      |
-| U<sup>2</sup>NetP (onnxruntime qnnpack)          | <hr>    | <hr>    | 0.4229s | <hr>      |
-| U<sup>2</sup>NetP (onnxruntime fbgemm)           | <hr>    | <hr>    | 0.5856s | <hr>      |
-| U<sup>2</sup>NetP (torch + CUDA)                 | <hr>    | <hr>    | 0.0621s | <hr>      |
-| DeepLabV3MobileNetV3 (torch)                     | 0.0255s | 0.0374s | 0.0829s | 0.4163s   |
-| DeepLabV3MobileNetV3 (`torch.compile`)           | 0.0289s | 0.0328s | 0.0997s | 0.4766s   |
-| DeepLabV3MobileNetV3 (onnxruntime)               | 0.0120s | <hr>    | <hr>    | <hr>      |
-| DeepLabV3MobileNetV3 (onnxruntime qnnpack)       | 0.0134s | <hr>    | <hr>    | <hr>      |
-| DeepLabV3MobileNetV3 (onnxruntime fbgemm)        | 0.0188s | <hr>    | <hr>    | <hr>      |
+| Model                                      | 256x256 | 320x320 | 512x512 | 1024x1024 | 1280x1280 | 1728x1728 | 2048x2048 |
+|:-------------------------------------------|:--------|:--------|:--------|:----------|:----------|:----------|:----------|
+| BiRefNet(\_lite) (torch)                   | <hr>    | <hr>    | <hr>    | 11.9498s  | 14.5727s  | 27.5174s  | 61.1317s  |
+| BiRefNet(\_lite) (onnxruntime)             | <hr>    | <hr>    | <hr>    | <hr>      | <hr>      | 18.8971s  | <hr>      |
+| U<sup>2</sup>Net (torch)                   | 0.3108s | 0.4828s | 1.2603s | 5.5562s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>Net (`torch.compile`)         | 0.2170s | 0.4269s | 1.2449s | 5.6484s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>Net (onnxruntime)             | <hr>    | <hr>    | <hr>    | 3.0919s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>Net (onnxruntime qnnpack)     | <hr>    | <hr>    | <hr>    | 2.9634s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>Net (onnxruntime fbgemm)      | <hr>    | <hr>    | <hr>    | 2.9522s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>Net (torch + CUDA)            | <hr>    | <hr>    | <hr>    | 0.4711s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (torch)                  | 0.1559s | 0.2331s | 0.7607s | 3.1737s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (`torch.compile`)        | 0.0986s | 0.2029s | 0.6119s | 2.5031s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (onnxruntime)            | <hr>    | <hr>    | 0.3396s | <hr>      | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (onnxruntime qnnpack)    | <hr>    | <hr>    | 0.4229s | <hr>      | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (onnxruntime fbgemm)     | <hr>    | <hr>    | 0.5856s | <hr>      | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (torch + CUDA)           | <hr>    | <hr>    | 0.0621s | <hr>      | <hr>      | <hr>      | <hr>      |
+| DeepLabV3MobileNetV3 (torch)               | 0.0255s | 0.0374s | 0.0829s | 0.4163s   | <hr>      | <hr>      | <hr>      |
+| DeepLabV3MobileNetV3 (`torch.compile`)     | 0.0289s | 0.0328s | 0.0997s | 0.4766s   | <hr>      | <hr>      | <hr>      |
+| DeepLabV3MobileNetV3 (onnxruntime)         | 0.0120s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
+| DeepLabV3MobileNetV3 (onnxruntime qnnpack) | 0.0134s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
+| DeepLabV3MobileNetV3 (onnxruntime fbgemm)  | 0.0188s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
 
 ## Qualitative Error Analysis
 
