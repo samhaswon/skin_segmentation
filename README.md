@@ -2,6 +2,9 @@
 
 This repository details the various methods I have attempted for skin segmentation.
 
+Currently, this more accurately called skin *region* segmentation as things like eyebrows, 
+teeth, and eyes are included in the mask.
+
 ## Usage
 
 For U<sup>2</sup>Net, U<sup>2</sup>NetP, and DLMV models, 
@@ -12,6 +15,32 @@ Trying to figure out which model to use?
 Try looking at [mIoU](#miou) and [Inference Time](#inference-time) and choose 
 the most accurate model within your computing environment's budget.
 
+### Some Potential Use Cases
+
+- Photomanipulation involving the correction of aspects of the skin such as pimples.
+
+- Hair segmentation, when combined with a human segmentation or SOD model and a human-in-the-loop (HITL) to remove the segmented clothes' region.
+
+    - This can be done rather simply with [saturated subtraction](https://en.wikipedia.org/wiki/Saturation_arithmetic) of the masks as (human - skin).
+
+      - This is available in the mathematics methods of OpenCV (cv2/opencv-python) 
+        or by using specific SIMD instructions in your targeted ISA.
+
+    - Alternatively, cloth(es) segmentation models exist. 
+      Their outputs can be used with saturated subtraction as well.
+
+- Gesture recognition and human-computer interaction
+
+    - It can help identify regions-of-interest (ROI) for other systems to interpret.
+
+- Content filtering based on how much skin is exposed
+
+    - There are better ways to do this, but it is a *potential* use case.
+
+- Face detection and tracking
+
+    - The area of the skin mask with the most local variation likely includes facial features.
+
 ## Traditional
 
 There are three methods in this folder that are doing roughly the same thing.
@@ -21,7 +50,7 @@ This gives the user an interface to adjust various thresholds to make a more
 accurate mask of the skin in an image.
 
 The second is in [face_skin.py](traditional/face_skin.py). 
-It detects the face in an image and automatically adjusts the thresholds based 
+It detects the face in an image and automatically adjusts the HSV thresholds based 
 upon the data in that area.
 
 Third is in [ycbcr_method](./traditional/ycbcr_method.py).
@@ -30,7 +59,26 @@ It effectively works the same as the HSV method (if automated), but in the YCbCr
 None of these methods were accurate enough for me. 
 They are good if you need something fast and possibly in the ballpark. 
 I even attempted to use both HSV color ranges and YCbCr ranges to no avail. 
-Therefore, I went to the next part.
+Therefore, I went searching for AI methods and found [Google](#google)'s implementation.
+
+### Other Traditional Methods
+
+Since I seem to not be able to leave well enough alone, I've kept going with implementing traditional methods.
+
+One such method is ICM ([icm_segment.py](./traditional/icm_segment.py)), which uses Markov random fields and locally conditional modes (ICM) to segment skin, 
+roughly based on these two papers: [Pose-Invariant Face Recognition Using Markov Random Fields](https://ieeexplore.ieee.org/abstract/document/6378453?casa_token=0LIf6xnENO8AAAAA:H6wub7bacP3aGfgyVjFCJBMYNtWr4mhcQuJknShuioBtx_Yt0eRjTcle7kTk9u9YygmkexUsWA) and [Face detection based on improved skin model and local iterated conditional modes](https://ieeexplore.ieee.org/abstract/document/7378122?casa_token=AqK4dOQawBgAAAAA:8VsF0CyaNvlCKtOgL8ZLgfSyZCUkdejyQz_wfc5NK-Ptd2yu3-6-BfXL-W3DVsD2loOG2xkFmQ).
+I'm including these here mostly for references as I did not directly use them for the included implementation.
+This is supposedly the best *traditional* method for skin *region* segmentation when you only look at skin pixels.
+This does not necessarily mean it is the best for skin *region* segmentation, though the skin region is mostly exclusively skin pixels.
+Additionally, the time taken by this method is comparable to the faster AI methods discussed later.
+
+Next are the two elliptical YCbCr methods found at [elliptical_ycbcr.py](./traditional/elliptical_ycbcr.py) and [diagonal_elliptical_ycbcr.py](traditional/diagonal_elliptical_ycbcr.py).
+These two methods are nearly identical, though with the diagonal variant using the formula for a diagonal ellipse.
+Additionally, the diagonal variant uses parameters fit on the training dataset's distribution. 
+If you want to see some of the fancy math around it, you can read the paper [Skin Color Modeling of Digital Photographic Images](https://library.imaging.org/admin/apis/public/api/ist/website/downloadArticle/jist/55/3/art00003).
+It demonstrates segmentation with a diagonal ellipse using 2 color components, and with a brightness component.
+The included diagonal implementation does not use the luminance of a particular pixel, but still performs fairly well.
+Specifically, the diagonal method performs on-par with the ICM method, which was tuned on the same data, but utilizing much less compute.
 
 ## Google
 
@@ -49,7 +97,7 @@ I originally planned on making my own, but failed in a lot of different ways.
 Let's just say I know a few architectures that will take 12 GB of VRAM to train 
 at a batch size of 1 and produce almost artistic representations of the input data. 
 
-So, after weeks of research, I settled on the [U<sup>2</sup>-Net](https://github.com/xuebinqin/U-2-Net) architecture. 
+So, after weeks of research, I settled on the [U<sup>2</sup>-Net](https://github.com/xuebinqin/U-2-Net) architecture ([paper](https://arxiv.org/pdf/2005.09007)). 
 I recommend checking out the original repo, plus the paper is a good read. 
 It seemed to perform well in [rembg](https://github.com/danielgatis/rembg) with the added benefit of inferencing code (to an extent). 
 
@@ -77,7 +125,7 @@ The `Session` class in [`./u2net/session.py`](./u2net/session.py) can also be us
 
 ## BiRefNet
 
-I came across [BiRefNet](https://github.com/ZhengPeng7/BiRefNet) while trying to find something else. 
+I came across [BiRefNet](https://github.com/ZhengPeng7/BiRefNet) while trying to find something else ([paper](https://arxiv.org/pdf/2401.03407)). 
 It's a good model, but incredibly difficult to work with from a memory perspective.
 Needless to say, I learned some new techniques to even train the "lite" variant for skin segmentation.
 I couldn't fit half of the model (at 1728x1728) on my RTX 3060, 
@@ -245,7 +293,7 @@ Augmentation steps include:
   then randomly rotated within a 0-90° range. 
   This rotated lattice is superimposed on the subject within the image, partially obscuring them. 
   The approach simulates realistic visual obstructions while preserving background and contextual 
-  cues, forcing models to learn more robust representations under occlusion. 
+  cues, forcing models to learn more robust representations under opaque occlusion. 
   Another lattice is also partially applied to the subject area by some amount.
   Locally, this simulates things like bracelets, watches, and other jewelry the 
   models struggled with in the past.
@@ -270,7 +318,7 @@ However, this is only used for training and not evaluation.
 ### Parameters and FLOPs
 
 FLOP count analysis was done with `fvcore`.
-Google (MediaPipe) is omitted due to its backend.
+Google (MediaPipe) is omitted due to its backend which I do not wish to learn.
 Do note that this process is imperfect, with some unsupported operators in each model. 
 BiRefNet has the most, with the CNN-based models having only a few like sigmoid.
 Additionally, BiRefNet (BiRefNet_lite) was not trained at 2048x2048 due to VRAM constraints.
@@ -381,3 +429,44 @@ but gains are likely to be small.
 Excluding transparent occlusion, which is comparatively underrepresented, 
 U<sup>2</sup>Net and BiRefNet perform somewhat comparably on this task both quantitatively and qualitatively.
 Outside more difficult areas of an image, the difference between the two is primarily a matter of precision.
+
+Some other troublesome areas:
+
+- Translucent occlusion
+
+- Airpods (apparently)
+
+- Glasses
+
+    - BiRefNet actually does ok on this given the frames are wide enough.
+
+    - This has to do with both inference size and lenses, as some lenses and frames can be difficult to handle.
+
+- Thin strands of hair, including facial hair.
+
+- Groups 
+
+    - This class of image is underrepresented in the dataset
+
+- Images without skin as this is not trained for.
+
+- Tattoos
+
+    - These are somewhat hard to train well for as they can be a colored/dark random spot 
+      in the skin area that appears as something which should not be considered skin.
+
+- Sudden, deep shadows
+
+    - More gradual ones generally do fine, but I guess sharply contrasting shadows look like occlusion.
+
+- Skin-ish colored things occluding skin
+
+    - For example, the leg of a wooden chair with a leg behind it.
+
+Trouble areas for CNN-based models:
+
+- Small, disconnected skin areas (e.g., a random hand, a thumb with the rest of the hand occluded)
+
+Trouble areas for DeepLabV3 + MobileNetV3 (DLMV):
+
+- Basically anything that isn't a simple headshot like you would see in a profile picture.
