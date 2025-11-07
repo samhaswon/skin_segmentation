@@ -246,7 +246,7 @@ if __name__ == "__main__":
     with open("gmm_bg.pkl", "rb") as f:
         gmm_bg = pickle.load(f)
 
-    img = cv2.imread("/home/samuel/code_projects/Python_Code/skin/images/00752.png")
+    img = cv2.imread("/path/to/image")
     img = cv2.resize(img, (img.shape[1] // 4, img.shape[0] // 4))
     start = time.perf_counter()
     mask = process_image(
