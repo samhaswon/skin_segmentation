@@ -68,7 +68,7 @@ Since I seem to not be able to leave well enough alone, I've kept going with imp
 One such method is ICM ([icm_segment.py](./traditional/icm_segment.py)), which uses Markov random fields and locally conditional modes (ICM) to segment skin, 
 roughly based on these two papers: [Pose-Invariant Face Recognition Using Markov Random Fields](https://ieeexplore.ieee.org/abstract/document/6378453?casa_token=0LIf6xnENO8AAAAA:H6wub7bacP3aGfgyVjFCJBMYNtWr4mhcQuJknShuioBtx_Yt0eRjTcle7kTk9u9YygmkexUsWA) and [Face detection based on improved skin model and local iterated conditional modes](https://ieeexplore.ieee.org/abstract/document/7378122?casa_token=AqK4dOQawBgAAAAA:8VsF0CyaNvlCKtOgL8ZLgfSyZCUkdejyQz_wfc5NK-Ptd2yu3-6-BfXL-W3DVsD2loOG2xkFmQ).
 I'm including these here mostly for references as I did not directly use them for the included implementation.
-This is supposedly the best *traditional* method for skin *region* segmentation when you only look at skin pixels.
+This is supposedly the best *traditional* method for skin segmentation when you only look at skin pixels (not skin region).
 This does not necessarily mean it is the best for skin *region* segmentation, though the skin region is mostly exclusively skin pixels.
 Additionally, the time taken by this method is comparable to the faster AI methods discussed later.
 
@@ -382,27 +382,33 @@ U<sup>2</sup>Net is still going to do best with 1024x1024 inputs,
 U<sup>2</sup>NetP with 512x512, and DeepLabV3MobileNetV3 with 256x256,
 though either U<sup>2</sup>Net or U<sup>2</sup>NetP may do well with the next lowest resolution.
 
-| Model                                      | 256x256 | 320x320 | 512x512 | 1024x1024 | 1280x1280 | 1728x1728 | 2048x2048 |
-|:-------------------------------------------|:--------|:--------|:--------|:----------|:----------|:----------|:----------|
-| BiRefNet(\_lite) (torch)                   | 0.6125s | 0.8687s | 2.6037s | 11.9498s  | 14.5727s  | 27.5174s  | 61.1317s  |
-| BiRefNet(\_lite) (onnxruntime)             | <hr>    | <hr>    | <hr>    | <hr>      | <hr>      | 18.8971s  | <hr>      |
-| U<sup>2</sup>Net (torch)                   | 0.3108s | 0.4828s | 1.2603s | 5.5562s   | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>Net (`torch.compile`)         | 0.2170s | 0.4269s | 1.2449s | 5.6484s   | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>Net (onnxruntime)             | <hr>    | <hr>    | <hr>    | 3.0919s   | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>Net (onnxruntime qnnpack)     | <hr>    | <hr>    | <hr>    | 2.9634s   | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>Net (onnxruntime fbgemm)      | <hr>    | <hr>    | <hr>    | 2.9522s   | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>Net (torch + CUDA)            | <hr>    | <hr>    | <hr>    | 0.4711s   | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>NetP (torch)                  | 0.1559s | 0.2331s | 0.7607s | 3.1737s   | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>NetP (`torch.compile`)        | 0.0986s | 0.2029s | 0.6119s | 2.5031s   | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>NetP (onnxruntime)            | <hr>    | <hr>    | 0.3396s | <hr>      | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>NetP (onnxruntime qnnpack)    | <hr>    | <hr>    | 0.4229s | <hr>      | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>NetP (onnxruntime fbgemm)     | <hr>    | <hr>    | 0.5856s | <hr>      | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>NetP (torch + CUDA)           | <hr>    | <hr>    | 0.0621s | <hr>      | <hr>      | <hr>      | <hr>      |
-| DeepLabV3MobileNetV3 (torch)               | 0.0255s | 0.0374s | 0.0829s | 0.4163s   | <hr>      | <hr>      | <hr>      |
-| DeepLabV3MobileNetV3 (`torch.compile`)     | 0.0289s | 0.0328s | 0.0997s | 0.4766s   | <hr>      | <hr>      | <hr>      |
-| DeepLabV3MobileNetV3 (onnxruntime)         | 0.0120s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
-| DeepLabV3MobileNetV3 (onnxruntime qnnpack) | 0.0134s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
-| DeepLabV3MobileNetV3 (onnxruntime fbgemm)  | 0.0188s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
+| Model                                                    | 256x256 | 320x320 | 512x512 | 1024x1024 | 1280x1280 | 1728x1728 | 2048x2048 |
+|:---------------------------------------------------------|:--------|:--------|:--------|:----------|:----------|:----------|:----------|
+| BiRefNet(\_lite) (torch)                                 | 0.6125s | 0.8687s | 2.6037s | 11.9498s  | 14.5727s  | 27.5174s  | 61.1317s  |
+| BiRefNet(\_lite) (onnxruntime)                           | <hr>    | <hr>    | <hr>    | <hr>      | <hr>      | 18.8971s  | <hr>      |
+| U<sup>2</sup>Net (torch)                                 | 0.3108s | 0.4828s | 1.2603s | 5.5562s   | 9.0918s   | 14.7011s  | 21.2722s  |
+| U<sup>2</sup>Net (torch, `inference_mode`)               | 0.2896s | 0.4485s | 1.2012s | 5.3387s   | 8.4383s   | 15.6485s  | 21.8896s  |
+| U<sup>2</sup>Net (`torch.compile`)                       | 0.2170s | 0.4269s | 1.2449s | 5.6484s   | 7.2809s   | 15.9674s  | 23.3404s  |
+| U<sup>2</sup>Net (`torch.compile`, `inference_mode`)     | 0.2562s | 0.4363s | 1.3019s | 5.5165s   | 8.4393s   | 16.4477s  | 24.1659s  |
+| U<sup>2</sup>Net (onnxruntime)                           | <hr>    | <hr>    | <hr>    | 3.0919s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>Net (onnxruntime qnnpack)                   | <hr>    | <hr>    | <hr>    | 2.9634s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>Net (onnxruntime fbgemm)                    | <hr>    | <hr>    | <hr>    | 2.9522s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>Net (torch + CUDA)                          | <hr>    | <hr>    | <hr>    | 0.4711s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (torch)                                | 0.1559s | 0.2331s | 0.7607s | 3.1737s   | 4.7568s   | 8.6204s   | 12.4256s  |
+| U<sup>2</sup>NetP (torch, `inference_mode`)              | 0.1289s | 0.2248s | 0.7545s | 3.1868s   | 4.9511s   | 9.0723s   | 13.2336s  |
+| U<sup>2</sup>NetP (`torch.compile`)                      | 0.0986s | 0.2029s | 0.6119s | 2.5031s   | 3.4430s   | 6.9755s   | 9.6092s   |
+| U<sup>2</sup>NetP (`torch.compile`, `inference_mode`)    | 0.0796  | 0.1683s | 0.5701s | 2.3462s   | 3.8350s   | 6.9258s   | 9.9064s   |
+| U<sup>2</sup>NetP (onnxruntime)                          | <hr>    | <hr>    | 0.3396s | <hr>      | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (onnxruntime qnnpack)                  | <hr>    | <hr>    | 0.4229s | <hr>      | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (onnxruntime fbgemm)                   | <hr>    | <hr>    | 0.5856s | <hr>      | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (torch + CUDA)                         | <hr>    | <hr>    | 0.0621s | <hr>      | <hr>      | <hr>      | <hr>      |
+| DeepLabV3MobileNetV3 (torch)                             | 0.0255s | 0.0374s | 0.0829s | 0.4163s   | 0.6279s   | 1.1827s   | 1.9184s   |
+| DeepLabV3MobileNetV3 (torch, `inference_mode`)           | 0.0266s | 0.0375s | 0.0851s | 0.3943s   | 0.6804s   | 1.5489s   | 2.3601s   |
+| DeepLabV3MobileNetV3 (`torch.compile`)                   | 0.0289s | 0.0328s | 0.0997s | 0.4766s   | 0.6788s   | 1.5522s   | 2.5041s   |
+| DeepLabV3MobileNetV3 (`torch.compile`, `inference_mode`) | 0.0292s | 0.0389s | 0.1125s | 0.5513s   | 0.7568s   | 1.5301s   | 2.5492s   | 
+| DeepLabV3MobileNetV3 (onnxruntime)                       | 0.0120s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
+| DeepLabV3MobileNetV3 (onnxruntime qnnpack)               | 0.0134s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
+| DeepLabV3MobileNetV3 (onnxruntime fbgemm)                | 0.0188s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
 
 ## Qualitative Error Analysis
 
