@@ -70,7 +70,8 @@ roughly based on these two papers: [Pose-Invariant Face Recognition Using Markov
 I'm including these here mostly for references as I did not directly use them for the included implementation.
 This is supposedly the best *traditional* method for skin segmentation when you only look at skin pixels (not skin region).
 This does not necessarily mean it is the best for skin *region* segmentation, though the skin region is mostly exclusively skin pixels.
-Additionally, the time taken by this method is comparable to the faster AI methods discussed later.
+Additionally, the time taken by this method is slower than the faster AI methods discussed later on CPU,
+taking an average of 10.70s per image (at full resolution) with the default parameters and JIT compilation.
 
 Next are the two elliptical YCbCr methods found at [elliptical_ycbcr.py](./traditional/elliptical_ycbcr.py) and [diagonal_elliptical_ycbcr.py](traditional/diagonal_elliptical_ycbcr.py).
 These two methods are nearly identical, though with the diagonal variant using the formula for a diagonal ellipse.
@@ -345,16 +346,51 @@ iou = intersection / union
 ```
 And the mean is taken across images.
 
-| Model/Method         | mIoU       |
-|:---------------------|:-----------|
-| U<sup>2</sup>Net     | 0.95706976 |
-| U<sup>2</sup>NetP    | 0.92763412 |
-| DeepLabV3MobileNetV3 | 0.86016590 |
-| Google (MediaPipe)   | 0.62159355 |
-| YCbCr                | 0.59500706 |
-| YCbCr & HSV          | 0.54362017 |
-| HSV                  | 0.53465931 |
-| Face                 | 0.53284573 |
+mIoU@ is calculated slightly differently, namely by first binarizing the inputs.
+This does lead to an increase in accuracy, mostly from the ground truth being binarized.
+```py
+prediction = torch.tensor(prediction, dtype=torch.float32) / 255.0
+labels = torch.tensor(labels, dtype=torch.float32) / 255.0
+bin_pred = (prediction >= at).float()
+bin_lab = labels.round()
+inter = (bin_pred * bin_lab).sum(dim=(0, 1))
+union = bin_pred.sum(dim=(0, 1)) + bin_lab.sum(dim=(0, 1)) - inter
+iou_v = ((inter + 1e-6) / (union + 1e-6)).mean().item()
+```
+
+#### Training Set
+
+| Model/Method              | mIoU       | mIoU@0.5   | MAE         |
+|:--------------------------|:-----------|:-----------|:------------|
+| BirefNet                  | 0.97259184 | 0.98543735 | 0.65279536  |
+| U<sup>2</sup>Net          | 0.95717705 | 0.97403675 | 2.21020127  |
+| U<sup>2</sup>NetP         | 0.92909448 | 0.94376292 | 3.53340132  |
+| DeepLabV3MobileNetV3      | 0.87064232 | 0.88061131 | 4.80666945  |
+| Google (MediaPipe)        | 0.61916837 | 0.61970152 | 31.84890669 |
+| ICM                       | 0.63464635 | 0.63695261 | 29.26669075 |
+| Diagonal Elliptical YCbCr | 0.62804600 | 0.63014882 | 33.72749032 |
+| Elliptical YCbCr          | 0.52903351 | 0.53050420 | 39.72920897 |
+| YCbCr                     | 0.54825962 | 0.54968896 | 51.89878261 |
+| YCbCr & HSV               | 0.54879407 | 0.55008863 | 41.10210647 |
+| HSV                       | 0.52135957 | 0.52343017 | 46.99411327 |
+| Face                      | 0.36567424 | 0.36688121 | 67.68717940 |
+
+#### Evaluation Set
+
+| Model/Method              | mIoU       | mIoU@0.5   | MAE         |
+|:--------------------------|:-----------|:-----------|:------------|
+| BirefNet                  | 0.94805010 | 0.95892835 | 1.37297002  |
+| U<sup>2</sup>Net          | 0.91892661 | 0.92986560 | 1.86526387  |
+| U<sup>2</sup>NetP         | 0.83778329 | 0.84766955 | 6.65506494  |
+| DeepLabV3MobileNetV3      | 0.67233776 | 0.67965204 | 13.23981987 |
+| Google (MediaPipe)        | 0.50935254 | 0.51168858 | 37.18664608 |
+| ICM                       | 0.62854154 | 0.63258325 | 38.27967593 |
+| Diagonal Elliptical YCbCr | 0.62280241 | 0.62709775 | 42.91651560 |
+| Elliptical YCbCr          | 0.55974326 | 0.56267723 | 37.41607899 |
+| YCbCr                     | 0.50624849 | 0.50941433 | 61.96742798 |
+| YCbCr & HSV               | 0.57177061 | 0.57467931 | 40.26470748 |
+| HSV                       | 0.54240182 | 0.54555430 | 45.65461663 |
+| Face                      | 0.28876560 | 0.29102011 | 85.87942962 |
 
 Note: the traditional methods do not include part of the eyes and the lips, 
 so that is part of the worse performance you see here.
@@ -381,6 +417,12 @@ Furthermore, these tests are for speed and not model accuracy.
 U<sup>2</sup>Net is still going to do best with 1024x1024 inputs, 
 U<sup>2</sup>NetP with 512x512, and DeepLabV3MobileNetV3 with 256x256,
 though either U<sup>2</sup>Net or U<sup>2</sup>NetP may do well with the next lowest resolution.
+
+Some of these results are, admittedly, confusing considering that what should decrease inference time increases it in some cases.
+Also, onnxruntime is very much a time-memory tradeoff decision.
+While it is faster, it may use too much memory depending on the intended application.
+Additionally, the torch compile mode is `max-autotune-no-cudagraphs` and took a while to do, 
+though this is not included in the average time reported.
 
 | Model                                                    | 256x256 | 320x320 | 512x512 | 1024x1024 | 1280x1280 | 1728x1728 | 2048x2048 |
 |:---------------------------------------------------------|:--------|:--------|:--------|:----------|:----------|:----------|:----------|
