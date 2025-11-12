@@ -153,6 +153,7 @@ if __name__ == "__main__":
         "/home/samuel/ai_data/skin_models/BiRefNet/birefnet.onnx",
         "/home/samuel/ai_data/skin_models/new/u2net.onnx",
         "/home/samuel/ai_data/skin_models/newp/u2netp.onnx",
+        "/home/samuel/ai_data/skin_models/sunet/sunet.onnx",
         "/home/samuel/ai_data/skin_models/dlmv/dlmv.onnx",
     ]
 
