@@ -152,6 +152,23 @@ that dramatically decreases the mIoU of most models and methods except
 HSV + YCbCr, Elliptical YCbCr, and ICM.
 HSV + YCbCr and ICM actually went up in mIoU and Elliptical YCbCr decreased slightly.
 
+## StraightU<sup>2</sup>Net
+
+This came about from me asking "what happens when you take U<sup>2</sup>-Net and remove the 'U' part?"
+Turns out, as-is, that's not the best idea and doesn't give good results.
+However, I haven't been normalizing inputs this whole time beyond dividing by 255 for FP32.
+Doing so, but centering on the skin region of the color space, this model does oddly well for its size.
+I mostly tuned the parameters such that the compute is close to DLMV, giving ~80k parameters.
+
+After results started getting good, the idea was to do better than the traditional methods and maybe DLMV.
+It has turned out to be between DLMV and U<sup>2</sup>-NetP for the training and evaluation sets.
+Notably, due to the method used to make it work well, it did not use the [color-based augmentations](#dataset-augmentation)
+used to make the larger models better.
+Additionally, the qualitative performance of this model is similar to DLMV in that more "odd" images
+tend to do worse than easier images.
+Because it works similar to the traditional methods, it also fails similarly.
+It also succeeds weirdly, as we'll see later on.
+
 ## Examples
 
 ![](./examples/model_plot.jpg)
@@ -174,10 +191,12 @@ And to show what the models do when there is no skin in the image, there's the c
 In the past, the models would classify random parts of the bun as "skin," 
 but dataset volume and augmentations seem to have reduced that effect 
 and introduced new model-specific idiosyncrasies.
+The weirdest of which being StraightU<sup>2</sup>-Net (`sunet`), 
+specifically because it's the only model that actually segmented this image correctly.
 
 ## Dataset Information
 
-The dataset used in this project consists of 1,165 images (1,134 training) with a combined 
+The dataset used in this project consists of 1,184 images (1,134 training) with a combined 
 total of approximately 6.26 × 10⁹ labeled pixels. 
 Images were sourced from a variety of online 
 (e.g., Google Image search results, Instagram) and private 
@@ -324,15 +343,16 @@ Do note that this process is imperfect, with some unsupported operators in each 
 BiRefNet has the most, with the CNN-based models having only a few like sigmoid.
 Additionally, BiRefNet (BiRefNet_lite) was not trained at 2048x2048 due to VRAM constraints.
 
-|        Model         | Inference Size | GFLOPS  |   Params   |
-|:--------------------:|:--------------:|:-------:|:----------:|
-|    BiRefNet_lite     |      2048      | 931.572 | 44,313,720 |
-|    BiRefNet_lite     |      1728      | 658.997 | 44,313,720 |
-|    BiRefNet_lite     |      1440      | 459.547 | 44,313,720 |
-|   U<sup>2</sup>Net   |      1024      | 604.007 | 44,009,869 |
-|  U<sup>2</sup>NetP   |      1024      | 205.082 | 1,131,181  |
-|  U<sup>2</sup>NetP   |      512       | 51.271  | 1,131,181  |
-| DeepLabV3MobileNetV3 |      256       |  2.473  | 11,020,337 |
+|           Model           | Inference Size | GFLOPS  |   Params   |
+|:-------------------------:|:--------------:|:-------:|:----------:|
+|       BiRefNet_lite       |      2048      | 931.572 | 44,313,720 |
+|       BiRefNet_lite       |      1728      | 658.997 | 44,313,720 |
+|       BiRefNet_lite       |      1440      | 459.547 | 44,313,720 |
+|     U<sup>2</sup>Net      |      1024      | 604.007 | 44,009,869 |
+|     U<sup>2</sup>NetP     |      1024      | 205.082 | 1,131,181  |
+|     U<sup>2</sup>NetP     |      512       | 51.271  | 1,131,181  |
+| StraightU<sup>2</sup>Net  |      320       |  8,294  |   79,937   |
+|   DeepLabV3MobileNetV3    |      256       |  2.473  | 11,020,337 |
 
 ### mIoU
 
@@ -365,6 +385,7 @@ iou_v = ((inter + 1e-6) / (union + 1e-6)).mean().item()
 | BirefNet                  | 0.97259184 | 0.98543735 | 0.65279536  |
 | U<sup>2</sup>Net          | 0.95717705 | 0.97403675 | 2.21020127  |
 | U<sup>2</sup>NetP         | 0.92909448 | 0.94376292 | 3.53340132  |
+| StraightU<sup>2</sup>Net  | 0.86673576 | 0.88170478 | 5.83840019  |
 | DeepLabV3MobileNetV3      | 0.87064232 | 0.88061131 | 4.80666945  |
 | Google (MediaPipe)        | 0.61916837 | 0.61970152 | 31.84890669 |
 | ICM                       | 0.63464635 | 0.63695261 | 29.26669075 |
@@ -382,6 +403,7 @@ iou_v = ((inter + 1e-6) / (union + 1e-6)).mean().item()
 | BirefNet                  | 0.94805010 | 0.95892835 | 1.37297002  |
 | U<sup>2</sup>Net          | 0.91892661 | 0.92986560 | 1.86526387  |
 | U<sup>2</sup>NetP         | 0.83778329 | 0.84766955 | 6.65506494  |
+| StraightU<sup>2</sup>Net  | 0.85632642 | 0.87191275 | 4.34213179  |
 | DeepLabV3MobileNetV3      | 0.67233776 | 0.67965204 | 13.23981987 |
 | Google (MediaPipe)        | 0.50935254 | 0.51168858 | 37.18664608 |
 | ICM                       | 0.62854154 | 0.63258325 | 38.27967593 |
@@ -418,39 +440,47 @@ U<sup>2</sup>Net is still going to do best with 1024x1024 inputs,
 U<sup>2</sup>NetP with 512x512, and DeepLabV3MobileNetV3 with 256x256,
 though either U<sup>2</sup>Net or U<sup>2</sup>NetP may do well with the next lowest resolution.
 
-Some of these results are, admittedly, confusing considering that what should decrease inference time increases it in some cases.
+Some of these results are, admittedly, confusing considering that what should decrease inference time 
+increases it in some cases.
 Also, onnxruntime is very much a time-memory tradeoff decision.
 While it is faster, it may use too much memory depending on the intended application.
 Additionally, the torch compile mode is `max-autotune-no-cudagraphs` and took a while to do, 
 though this is not included in the average time reported.
+Finally, this does not include pre- or post-processing of inputs and outputs.
+Except for BiRefNet, which is special, they're all identical in that regard anyway.
 
-| Model                                                    | 256x256 | 320x320 | 512x512 | 1024x1024 | 1280x1280 | 1728x1728 | 2048x2048 |
-|:---------------------------------------------------------|:--------|:--------|:--------|:----------|:----------|:----------|:----------|
-| BiRefNet(\_lite) (torch)                                 | 0.6125s | 0.8687s | 2.6037s | 11.9498s  | 14.5727s  | 27.5174s  | 61.1317s  |
-| BiRefNet(\_lite) (onnxruntime)                           | <hr>    | <hr>    | <hr>    | <hr>      | <hr>      | 18.8971s  | <hr>      |
-| U<sup>2</sup>Net (torch)                                 | 0.3108s | 0.4828s | 1.2603s | 5.5562s   | 9.0918s   | 14.7011s  | 21.2722s  |
-| U<sup>2</sup>Net (torch, `inference_mode`)               | 0.2896s | 0.4485s | 1.2012s | 5.3387s   | 8.4383s   | 15.6485s  | 21.8896s  |
-| U<sup>2</sup>Net (`torch.compile`)                       | 0.2170s | 0.4269s | 1.2449s | 5.6484s   | 7.2809s   | 15.9674s  | 23.3404s  |
-| U<sup>2</sup>Net (`torch.compile`, `inference_mode`)     | 0.2562s | 0.4363s | 1.3019s | 5.5165s   | 8.4393s   | 16.4477s  | 24.1659s  |
-| U<sup>2</sup>Net (onnxruntime)                           | <hr>    | <hr>    | <hr>    | 3.0919s   | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>Net (onnxruntime qnnpack)                   | <hr>    | <hr>    | <hr>    | 2.9634s   | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>Net (onnxruntime fbgemm)                    | <hr>    | <hr>    | <hr>    | 2.9522s   | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>Net (torch + CUDA)                          | <hr>    | <hr>    | <hr>    | 0.4711s   | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>NetP (torch)                                | 0.1559s | 0.2331s | 0.7607s | 3.1737s   | 4.7568s   | 8.6204s   | 12.4256s  |
-| U<sup>2</sup>NetP (torch, `inference_mode`)              | 0.1289s | 0.2248s | 0.7545s | 3.1868s   | 4.9511s   | 9.0723s   | 13.2336s  |
-| U<sup>2</sup>NetP (`torch.compile`)                      | 0.0986s | 0.2029s | 0.6119s | 2.5031s   | 3.4430s   | 6.9755s   | 9.6092s   |
-| U<sup>2</sup>NetP (`torch.compile`, `inference_mode`)    | 0.0796  | 0.1683s | 0.5701s | 2.3462s   | 3.8350s   | 6.9258s   | 9.9064s   |
-| U<sup>2</sup>NetP (onnxruntime)                          | <hr>    | <hr>    | 0.3396s | <hr>      | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>NetP (onnxruntime qnnpack)                  | <hr>    | <hr>    | 0.4229s | <hr>      | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>NetP (onnxruntime fbgemm)                   | <hr>    | <hr>    | 0.5856s | <hr>      | <hr>      | <hr>      | <hr>      |
-| U<sup>2</sup>NetP (torch + CUDA)                         | <hr>    | <hr>    | 0.0621s | <hr>      | <hr>      | <hr>      | <hr>      |
-| DeepLabV3MobileNetV3 (torch)                             | 0.0255s | 0.0374s | 0.0829s | 0.4163s   | 0.6279s   | 1.1827s   | 1.9184s   |
-| DeepLabV3MobileNetV3 (torch, `inference_mode`)           | 0.0266s | 0.0375s | 0.0851s | 0.3943s   | 0.6804s   | 1.5489s   | 2.3601s   |
-| DeepLabV3MobileNetV3 (`torch.compile`)                   | 0.0289s | 0.0328s | 0.0997s | 0.4766s   | 0.6788s   | 1.5522s   | 2.5041s   |
-| DeepLabV3MobileNetV3 (`torch.compile`, `inference_mode`) | 0.0292s | 0.0389s | 0.1125s | 0.5513s   | 0.7568s   | 1.5301s   | 2.5492s   | 
-| DeepLabV3MobileNetV3 (onnxruntime)                       | 0.0120s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
-| DeepLabV3MobileNetV3 (onnxruntime qnnpack)               | 0.0134s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
-| DeepLabV3MobileNetV3 (onnxruntime fbgemm)                | 0.0188s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
+| Model                                                        | 256x256 | 320x320 | 512x512 | 1024x1024 | 1280x1280 | 1728x1728 | 2048x2048 |
+|:-------------------------------------------------------------|:--------|:--------|:--------|:----------|:----------|:----------|:----------|
+| BiRefNet(\_lite) (torch)                                     | 0.6125s | 0.8687s | 2.6037s | 11.9498s  | 14.5727s  | 27.5174s  | 61.1317s  |
+| BiRefNet(\_lite) (onnxruntime)                               | <hr>    | <hr>    | <hr>    | <hr>      | <hr>      | 18.8971s  | <hr>      |
+| U<sup>2</sup>Net (torch)                                     | 0.3108s | 0.4828s | 1.2603s | 5.5562s   | 9.0918s   | 14.7011s  | 21.2722s  |
+| U<sup>2</sup>Net (torch, `inference_mode`)                   | 0.2896s | 0.4485s | 1.2012s | 5.3387s   | 8.4383s   | 15.6485s  | 21.8896s  |
+| U<sup>2</sup>Net (`torch.compile`)                           | 0.2170s | 0.4269s | 1.2449s | 5.6484s   | 7.2809s   | 15.9674s  | 23.3404s  |
+| U<sup>2</sup>Net (`torch.compile`, `inference_mode`)         | 0.2562s | 0.4363s | 1.3019s | 5.5165s   | 8.4393s   | 16.4477s  | 24.1659s  |
+| U<sup>2</sup>Net (onnxruntime)                               | <hr>    | <hr>    | <hr>    | 3.0919s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>Net (onnxruntime qnnpack)                       | <hr>    | <hr>    | <hr>    | 2.9634s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>Net (onnxruntime fbgemm)                        | <hr>    | <hr>    | <hr>    | 2.9522s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>Net (torch + CUDA)                              | <hr>    | <hr>    | <hr>    | 0.4711s   | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (torch)                                    | 0.1559s | 0.2331s | 0.7607s | 3.1737s   | 4.7568s   | 8.6204s   | 12.4256s  |
+| U<sup>2</sup>NetP (torch, `inference_mode`)                  | 0.1289s | 0.2248s | 0.7545s | 3.1868s   | 4.9511s   | 9.0723s   | 13.2336s  |
+| U<sup>2</sup>NetP (`torch.compile`)                          | 0.0986s | 0.2029s | 0.6119s | 2.5031s   | 3.4430s   | 6.9755s   | 9.6092s   |
+| U<sup>2</sup>NetP (`torch.compile`, `inference_mode`)        | 0.0796  | 0.1683s | 0.5701s | 2.3462s   | 3.8350s   | 6.9258s   | 9.9064s   |
+| U<sup>2</sup>NetP (onnxruntime)                              | <hr>    | <hr>    | 0.3396s | <hr>      | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (onnxruntime qnnpack)                      | <hr>    | <hr>    | 0.4229s | <hr>      | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (onnxruntime fbgemm)                       | <hr>    | <hr>    | 0.4184s | <hr>      | <hr>      | <hr>      | <hr>      |
+| U<sup>2</sup>NetP (torch + CUDA)                             | <hr>    | <hr>    | 0.0621s | <hr>      | <hr>      | <hr>      | <hr>      |
+| StraightU<sup>2</sup>Net (torch)                             | 0.0741s | 0.1203s | 0.3765s | 1.9290s   | 3.0581s   | 5.6680s   | 7.7672s   |
+| StraightU<sup>2</sup>Net (torch, `inference_mode`)           | 0.0347s | 0.0437s | 0.1567s | 0.7670s   | 1.1879s   | 2.2361s   | 3.0404s   |
+| StraightU<sup>2</sup>Net (`torch.compile`)                   | 0.0636s | 0.1082s | 0.4289s | 2.0326s   | 3.1480s   | 5.6107s   | 7.8701s   |
+| StraightU<sup>2</sup>Net (`torch.compile`, `inference_mode`) | 0.0353s | 0.0514s | 0.1529s | 0.8069s   | 1.2580s   | 2.2380s   | 3.1538s   |
+| StraightU<sup>2</sup>Net (onnxruntime)                       | <hr>    | 0.0481s | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
+| DeepLabV3MobileNetV3 (torch)                                 | 0.0255s | 0.0374s | 0.0829s | 0.4163s   | 0.6279s   | 1.1827s   | 1.9184s   |
+| DeepLabV3MobileNetV3 (torch, `inference_mode`)               | 0.0266s | 0.0375s | 0.0851s | 0.3943s   | 0.6804s   | 1.5489s   | 2.3601s   |
+| DeepLabV3MobileNetV3 (`torch.compile`)                       | 0.0289s | 0.0328s | 0.0997s | 0.4766s   | 0.6788s   | 1.5522s   | 2.5041s   |
+| DeepLabV3MobileNetV3 (`torch.compile`, `inference_mode`)     | 0.0292s | 0.0389s | 0.1125s | 0.5513s   | 0.7568s   | 1.5301s   | 2.5492s   | 
+| DeepLabV3MobileNetV3 (onnxruntime)                           | 0.0120s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
+| DeepLabV3MobileNetV3 (onnxruntime qnnpack)                   | 0.0134s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
+| DeepLabV3MobileNetV3 (onnxruntime fbgemm)                    | 0.0139s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
 
 ## Qualitative Error Analysis
 
