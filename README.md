@@ -12,7 +12,7 @@ you can use the `Session` class in [`u2net/session.py`](./u2net/session.py) for 
 [`u2net/u2net_attempt.py`](./u2net/u2net_attempt.py) demonstrates the usage of this class.
 
 Trying to figure out which model to use?
-Try looking at [mIoU](#miou) and [Inference Time](#inference-time) and choose 
+Try looking at [Metrics](#metrics) and [Inference Time](#inference-time) and choose 
 the most accurate model within your computing environment's budget.
 
 ### Some Potential Use Cases
@@ -118,7 +118,7 @@ Each model can be found in the [`Releases`](https://github.com/samhaswon/skin_se
 
 ## DeepLabV3 + MobileNetV3 Backbone (DLMV)
 
-This model was requested and does [ok](#mIoU) for this task. 
+This model was requested and does [ok](#metrics) for this task. 
 It is not good enough for image editing, but could be used for close to real-time inference with this task.
 It's better than the Google model I tested for this, but that's not saying much.
 
@@ -196,8 +196,8 @@ specifically because it's the only model that actually segmented this image corr
 
 ## Dataset Information
 
-The dataset used in this project consists of 1,184 images (1,134 training) with a combined 
-total of approximately 6.26 × 10⁹ labeled pixels. 
+The dataset used in this project consists of 1,185 images (1,134 training) with a combined 
+total of approximately 6.48 × 10⁹ labeled pixels (5.81 × 10⁹ training). 
 Images were sourced from a variety of online 
 (e.g., Google Image search results, Instagram) and private 
 (e.g., my photography work, diffusion models) collections to maximize diversity of scene, 
@@ -351,13 +351,14 @@ Additionally, BiRefNet (BiRefNet_lite) was not trained at 2048x2048 due to VRAM 
 |     U<sup>2</sup>Net      |      1024      | 604.007 | 44,009,869 |
 |     U<sup>2</sup>NetP     |      1024      | 205.082 | 1,131,181  |
 |     U<sup>2</sup>NetP     |      512       | 51.271  | 1,131,181  |
-| StraightU<sup>2</sup>Net  |      320       |  8,294  |   79,937   |
+| StraightU<sup>2</sup>Net  |      320       |  8.294  |   79,937   |
 |   DeepLabV3MobileNetV3    |      256       |  2.473  | 11,020,337 |
 
-### mIoU
+### Metrics
 
 Mean Intersection over Union (mIoU) is used to evaluate the 
 classification performance of each model and method tested.
+A perfect score would be 1.0, but that is unlikely even for a human.
 It is calculated with:
 ```py
 intersection = np.bitwise_and(prediction, ground_truth).sum()
@@ -378,41 +379,54 @@ union = bin_pred.sum(dim=(0, 1)) + bin_lab.sum(dim=(0, 1)) - inter
 iou_v = ((inter + 1e-6) / (union + 1e-6)).mean().item()
 ```
 
+Another metric used is Mean Absolute Error (MAE). 
+Effectively, it's a measure of how wrong the model or method is on average.
+This calculation is done pixel-wise over the dataset, but the maximum it can be is 255.
+
+Next is Human Correction Efforts (HCE) from the [Dichotomous Image Segmentation paper](https://arxiv.org/pdf/2203.03041).
+In short, it's a way to approximate the number of mouse click operations required to correct the false positives and false negatives.
+The code used comes from the original repo [here](https://github.com/xuebinqin/DIS/tree/main).
+If you end up using it for something, it is rather slow to calculate.
+
 #### Training Set
 
-| Model/Method              | mIoU       | mIoU@0.5   | MAE         |
-|:--------------------------|:-----------|:-----------|:------------|
-| BirefNet                  | 0.97259184 | 0.98543735 | 0.65279536  |
-| U<sup>2</sup>Net          | 0.95717705 | 0.97403675 | 2.21020127  |
-| U<sup>2</sup>NetP         | 0.92909448 | 0.94376292 | 3.53340132  |
-| StraightU<sup>2</sup>Net  | 0.86673576 | 0.88170478 | 5.83840019  |
-| DeepLabV3MobileNetV3      | 0.87064232 | 0.88061131 | 4.80666945  |
-| Google (MediaPipe)        | 0.61916837 | 0.61970152 | 31.84890669 |
-| ICM                       | 0.63464635 | 0.63695261 | 29.26669075 |
-| Diagonal Elliptical YCbCr | 0.62804600 | 0.63014882 | 33.72749032 |
-| Elliptical YCbCr          | 0.52903351 | 0.53050420 | 39.72920897 |
-| YCbCr                     | 0.54825962 | 0.54968896 | 51.89878261 |
-| YCbCr & HSV               | 0.54879407 | 0.55008863 | 41.10210647 |
-| HSV                       | 0.52135957 | 0.52343017 | 46.99411327 |
-| Face                      | 0.36567424 | 0.36688121 | 67.68717940 |
+| Model/Method              | mIoU       | mIoU@0.5   | MAE         | HCE    |
+|:--------------------------|:-----------|:-----------|:------------|:-------|
+| BirefNet                  | 0.97259184 | 0.98543735 | 0.65279536  | 100.6  |
+| U<sup>2</sup>Net          | 0.95717705 | 0.97403675 | 2.21020127  | 99.0   |
+| U<sup>2</sup>NetP         | 0.92909448 | 0.94376292 | 3.53340132  | 131.6  |
+| StraightU<sup>2</sup>Net  | 0.86673576 | 0.88170478 | 5.83840019  | 177.9  |
+| DeepLabV3MobileNetV3      | 0.87064232 | 0.88061131 | 4.80666945  | 119.4  |
+| Google (MediaPipe)        | 0.61916837 | 0.61970152 | 31.84890669 | 237.1  |
+| ICM                       | 0.63464635 | 0.63695261 | 29.26669075 | 834.1  |
+| Diagonal Elliptical YCbCr | 0.62804600 | 0.63014882 | 33.72749032 | 934.4  |
+| Elliptical YCbCr          | 0.52903351 | 0.53050420 | 39.72920897 | 908.2  |
+| YCbCr                     | 0.54825962 | 0.54968896 | 51.89878261 | 787.7  |
+| YCbCr & HSV               | 0.54879407 | 0.55008863 | 41.10210647 | 1119.8 |
+| HSV                       | 0.52135957 | 0.52343017 | 46.99411327 | 1176.1 |
+| Face                      | 0.36567424 | 0.36688121 | 67.68717940 | 1367.4 |
+
+Time: 89343.20s (~24.8 hours)
 
 #### Evaluation Set
 
-| Model/Method              | mIoU       | mIoU@0.5   | MAE         |
-|:--------------------------|:-----------|:-----------|:------------|
-| BirefNet                  | 0.94805010 | 0.95892835 | 1.37297002  |
-| U<sup>2</sup>Net          | 0.91892661 | 0.92986560 | 1.86526387  |
-| U<sup>2</sup>NetP         | 0.83778329 | 0.84766955 | 6.65506494  |
-| StraightU<sup>2</sup>Net  | 0.85632642 | 0.87191275 | 4.34213179  |
-| DeepLabV3MobileNetV3      | 0.67233776 | 0.67965204 | 13.23981987 |
-| Google (MediaPipe)        | 0.50935254 | 0.51168858 | 37.18664608 |
-| ICM                       | 0.62854154 | 0.63258325 | 38.27967593 |
-| Diagonal Elliptical YCbCr | 0.62280241 | 0.62709775 | 42.91651560 |
-| Elliptical YCbCr          | 0.55974326 | 0.56267723 | 37.41607899 |
-| YCbCr                     | 0.50624849 | 0.50941433 | 61.96742798 |
-| YCbCr & HSV               | 0.57177061 | 0.57467931 | 40.26470748 |
-| HSV                       | 0.54240182 | 0.54555430 | 45.65461663 |
-| Face                      | 0.28876560 | 0.29102011 | 85.87942962 |
+| Model/Method              | mIoU       | mIoU@0.5   | MAE         | HCE    |
+|:--------------------------|:-----------|:-----------|:------------|:-------|
+| BirefNet                  | 0.94805010 | 0.95892835 | 1.37297002  | 120.3  |
+| U<sup>2</sup>Net          | 0.91892661 | 0.92986560 | 1.86526387  | 115.5  |
+| U<sup>2</sup>NetP         | 0.83778329 | 0.84766955 | 6.65506494  | 158.3  |
+| StraightU<sup>2</sup>Net  | 0.85632642 | 0.87191275 | 4.34213179  | 214.0  |
+| DeepLabV3MobileNetV3      | 0.67233776 | 0.67965204 | 13.23981987 | 127.3  |
+| Google (MediaPipe)        | 0.50935254 | 0.51168858 | 37.18664608 | 344.6  |
+| ICM                       | 0.62854154 | 0.63258325 | 38.27967593 | 1822.4 |
+| Diagonal Elliptical YCbCr | 0.62280241 | 0.62709775 | 42.91651560 | 2130.0 |
+| Elliptical YCbCr          | 0.55974326 | 0.56267723 | 37.41607899 | 1771.6 |
+| YCbCr                     | 0.50624849 | 0.50941433 | 61.96742798 | 1966.8 |
+| YCbCr & HSV               | 0.57177061 | 0.57467931 | 40.26470748 | 2161.5 |
+| HSV                       | 0.54240182 | 0.54555430 | 45.65461663 | 2305.8 |
+| Face                      | 0.28876560 | 0.29102011 | 85.87942962 | 2913.6 |
+
+Time: 7707.06s
 
 Note: the traditional methods do not include part of the eyes and the lips, 
 so that is part of the worse performance you see here.
@@ -449,9 +463,14 @@ though this is not included in the average time reported.
 Finally, this does not include pre- or post-processing of inputs and outputs.
 Except for BiRefNet, which is special, they're all identical in that regard anyway.
 
+Additionally, some of the BiRefNet tests in PyTorch just got stuck. 
+I got bored with waiting on it to do anything after hours, so there are no results for those tests.
+
 | Model                                                        | 256x256 | 320x320 | 512x512 | 1024x1024 | 1280x1280 | 1728x1728 | 2048x2048 |
 |:-------------------------------------------------------------|:--------|:--------|:--------|:----------|:----------|:----------|:----------|
-| BiRefNet(\_lite) (torch)                                     | 0.6125s | 0.8687s | 2.6037s | 11.9498s  | 14.5727s  | 27.5174s  | 61.1317s  |
+| BiRefNet(\_lite) (torch)                                     | 0.6290s | 0.9046s | 2.6359s | 12.5315s  | 15.6293s  | 27.5822s  | 62.9691s  |
+| BiRefNet(\_lite) (torch, `inference_mode`)                   | 0.5694s | 0.8162s | 2.3019s | 10.7903s  | <hr>      | <hr>      | <hr>      |
+| BiRefNet(\_lite) (`torch.compile`)                           | 0.5058s | 0.8064s | 2.1033s | 10.7870s  | <hr>      | <hr>      | <hr>      |
 | BiRefNet(\_lite) (onnxruntime)                               | <hr>    | <hr>    | <hr>    | <hr>      | <hr>      | 18.8971s  | <hr>      |
 | U<sup>2</sup>Net (torch)                                     | 0.3108s | 0.4828s | 1.2603s | 5.5562s   | 9.0918s   | 14.7011s  | 21.2722s  |
 | U<sup>2</sup>Net (torch, `inference_mode`)                   | 0.2896s | 0.4485s | 1.2012s | 5.3387s   | 8.4383s   | 15.6485s  | 21.8896s  |
@@ -548,3 +567,13 @@ Trouble areas for CNN-based models:
 Trouble areas for DeepLabV3 + MobileNetV3 (DLMV):
 
 - Basically anything that isn't a simple headshot like you would see in a profile picture.
+
+## Deep Dreaming
+
+What happens when you take one of the skin segmentation models, U<sup>2</sup>-Net in this case, and run the Deep Dream algorithm on it?
+Well, it looks something like this.
+If you zoom out or blur the image, it averages out to a shade of brown.
+This makes sense when you think about how the traditional methods work.
+The most likely skin regions of an image are some shade of brown to white.
+
+![](./examples/u2net_dream.png)
