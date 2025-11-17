@@ -196,8 +196,8 @@ specifically because it's the only model that actually segmented this image corr
 
 ## Dataset Information
 
-The dataset used in this project consists of 1,185 images (1,134 training) with a combined 
-total of approximately 6.48 × 10⁹ labeled pixels (5.81 × 10⁹ training). 
+The dataset used in this project consists of 1,190 images (1,134 training) with a combined 
+total of approximately 6.56×10⁹ labeled pixels (5.81×10⁹ training). 
 Images were sourced from a variety of online 
 (e.g., Google Image search results, Instagram) and private 
 (e.g., my photography work, diffusion models) collections to maximize diversity of scene, 
@@ -274,6 +274,21 @@ If you recall from you childhood art classes, red and yellow make orange.
 And when you take orange and reduce its luminance, you get brown.
 Skew red for a more pinkish skin tone, 
 subtracting blue chroma (adding green) to get more of a yellowish skin tone (red + green = yellow in additive color).
+
+#### Heatmap
+
+![Heatmap generated from the masks of the skin segmentation dataset.](./examples/heatmap.png)
+
+Viewing the masks as a heatmap, you can somewhat see the rule of thirds coming into play.
+Roughly around what would be the center third is where the subject most frequently is, 
+so that's where skin tends to appear.
+Additionally, portrait shots and clothes skew the distribution spatially upwards,
+with exposed arms and other areas making the distribution around that area somewhat smooth.
+
+When generating the heatmap, it was normalized and not just averaged.
+This makes the high points more obvious and less dulled from infrequency.
+The dataset contains a rather diverse range of contexts, 
+so the impact of portrait shots is not enough to be as noticeable without normalization.
 
 ### Dataset Augmentation
 
@@ -412,21 +427,21 @@ Time: 89343.20s (~24.8 hours)
 
 | Model/Method              | mIoU       | mIoU@0.5   | MAE         | HCE    |
 |:--------------------------|:-----------|:-----------|:------------|:-------|
-| BirefNet                  | 0.94805010 | 0.95892835 | 1.37297002  | 120.3  |
-| U<sup>2</sup>Net          | 0.91892661 | 0.92986560 | 1.86526387  | 115.5  |
-| U<sup>2</sup>NetP         | 0.83778329 | 0.84766955 | 6.65506494  | 158.3  |
-| StraightU<sup>2</sup>Net  | 0.85632642 | 0.87191275 | 4.34213179  | 214.0  |
-| DeepLabV3MobileNetV3      | 0.67233776 | 0.67965204 | 13.23981987 | 127.3  |
-| Google (MediaPipe)        | 0.50935254 | 0.51168858 | 37.18664608 | 344.6  |
-| ICM                       | 0.62854154 | 0.63258325 | 38.27967593 | 1822.4 |
-| Diagonal Elliptical YCbCr | 0.62280241 | 0.62709775 | 42.91651560 | 2130.0 |
-| Elliptical YCbCr          | 0.55974326 | 0.56267723 | 37.41607899 | 1771.6 |
-| YCbCr                     | 0.50624849 | 0.50941433 | 61.96742798 | 1966.8 |
-| YCbCr & HSV               | 0.57177061 | 0.57467931 | 40.26470748 | 2161.5 |
-| HSV                       | 0.54240182 | 0.54555430 | 45.65461663 | 2305.8 |
-| Face                      | 0.28876560 | 0.29102011 | 85.87942962 | 2913.6 |
+| BirefNet                  | 0.95003843 | 0.96200387 | 1.17989964  | 119.7  |
+| U<sup>2</sup>Net          | 0.92834467 | 0.94226537 | 1.54364402  | 115.4  |
+| U<sup>2</sup>NetP         | 0.82145754 | 0.83174338 | 7.39963478  | 161.0  |
+| StraightU<sup>2</sup>Net  | 0.82469055 | 0.83909940 | 3.97202566  | 217.7  |
+| DeepLabV3MobileNetV3      | 0.66986442 | 0.67591941 | 12.65372223 | 129.0  |
+| Google (MediaPipe)        | 0.55300608 | 0.55459032 | 31.81436361 | 347.7  |
+| ICM                       | 0.64369708 | 0.64720859 | 34.80558005 | 1768.7 |
+| Diagonal Elliptical YCbCr | 0.62530541 | 0.62880791 | 39.89302304 | 2058.1 |
+| Elliptical YCbCr          | 0.52850907 | 0.53085884 | 34.64063682 | 1748.6 |
+| YCbCr                     | 0.52874625 | 0.53142787 | 56.27950878 | 1868.6 |
+| YCbCr & HSV               | 0.58580001 | 0.58844747 | 36.32139871 | 2064.6 |
+| HSV                       | 0.56476116 | 0.56773417 | 40.92958464 | 2204.9 |
+| Face                      | 0.35869056 | 0.36100534 | 76.05146723 | 2808.5 |
 
-Time: 7707.06s
+Time: 9538.17s
 
 Note: the traditional methods do not include part of the eyes and the lips, 
 so that is part of the worse performance you see here.
