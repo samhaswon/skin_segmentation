@@ -196,8 +196,8 @@ specifically because it's the only model that actually segmented this image corr
 
 ## Dataset Information
 
-The dataset used in this project consists of 1,190 images (1,134 training) with a combined 
-total of approximately 6.56×10⁹ labeled pixels (5.81×10⁹ training). 
+The dataset used in this project consists of 1,204 images (1,134 training) with a combined 
+total of approximately 6.73×10⁹ labeled pixels (5.81×10⁹ training). 
 Images were sourced from a variety of online 
 (e.g., Google Image search results, Instagram) and private 
 (e.g., my photography work, diffusion models) collections to maximize diversity of scene, 
@@ -407,7 +407,7 @@ If you end up using it for something, it is rather slow to calculate.
 
 | Model/Method              | mIoU       | mIoU@0.5   | MAE         | HCE    |
 |:--------------------------|:-----------|:-----------|:------------|:-------|
-| BirefNet                  | 0.97259184 | 0.98543735 | 0.65279536  | 100.6  |
+| BiRefNet                  | 0.97259184 | 0.98543735 | 0.65279536  | 100.6  |
 | U<sup>2</sup>Net          | 0.95717705 | 0.97403675 | 2.21020127  | 99.0   |
 | U<sup>2</sup>NetP         | 0.92909448 | 0.94376292 | 3.53340132  | 131.6  |
 | StraightU<sup>2</sup>Net  | 0.86673576 | 0.88170478 | 5.83840019  | 177.9  |
@@ -427,37 +427,53 @@ Time: 89343.20s (~24.8 hours)
 
 | Model/Method              | mIoU       | mIoU@0.5   | MAE         | HCE    |
 |:--------------------------|:-----------|:-----------|:------------|:-------|
-| BirefNet                  | 0.95003843 | 0.96200387 | 1.17989964  | 119.7  |
-| U<sup>2</sup>Net          | 0.92834467 | 0.94226537 | 1.54364402  | 115.4  |
-| U<sup>2</sup>NetP         | 0.82145754 | 0.83174338 | 7.39963478  | 161.0  |
-| StraightU<sup>2</sup>Net  | 0.82469055 | 0.83909940 | 3.97202566  | 217.7  |
-| DeepLabV3MobileNetV3      | 0.66986442 | 0.67591941 | 12.65372223 | 129.0  |
-| Google (MediaPipe)        | 0.55300608 | 0.55459032 | 31.81436361 | 347.7  |
-| ICM                       | 0.64369708 | 0.64720859 | 34.80558005 | 1768.7 |
-| Diagonal Elliptical YCbCr | 0.62530541 | 0.62880791 | 39.89302304 | 2058.1 |
-| Elliptical YCbCr          | 0.52850907 | 0.53085884 | 34.64063682 | 1748.6 |
-| YCbCr                     | 0.52874625 | 0.53142787 | 56.27950878 | 1868.6 |
-| YCbCr & HSV               | 0.58580001 | 0.58844747 | 36.32139871 | 2064.6 |
-| HSV                       | 0.56476116 | 0.56773417 | 40.92958464 | 2204.9 |
-| Face                      | 0.35869056 | 0.36100534 | 76.05146723 | 2808.5 |
+| BiRefNet                  | 0.94676485 | 0.96104952 | 1.19378242  | 243.0  |
+| U<sup>2</sup>Net          | 0.91045846 | 0.92545818 | 1.89087316  | 357.4  |
+| U<sup>2</sup>NetP         | 0.81010457 | 0.82169437 | 7.78251227  | 404.5  |
+| StraightU<sup>2</sup>Net  | 0.81241271 | 0.82753460 | 5.02443159  | 426.7  |
+| DeepLabV3MobileNetV3      | 0.63919717 | 0.64474565 | 14.72501576 | 250.1  |
+| Google (MediaPipe)        | 0.53910064 | 0.54039942 | 34.66313170 | 588.1  |
+| ICM                       | 0.61323843 | 0.61692257 | 35.90004491 | 1812.6 |
+| Diagonal Elliptical YCbCr | 0.60055915 | 0.60407782 | 40.97930589 | 2173.1 |
+| Elliptical YCbCr          | 0.50804118 | 0.51063570 | 35.44894022 | 1834.5 |
+| YCbCr                     | 0.51649743 | 0.51923974 | 55.07992628 | 1918.7 |
+| YCbCr & HSV               | 0.54996273 | 0.55275393 | 37.92072090 | 2116.1 |
+| HSV                       | 0.52790392 | 0.53102479 | 42.32860969 | 2254.4 |
+| Face                      | 0.34798417 | 0.35025993 | 72.99048409 | 3051.5 |
 
-Time: 9538.17s
+Time: 11442.24s
 
 Note: the traditional methods do not include part of the eyes and the lips, 
 so that is part of the worse performance you see here.
+Additionally, BiRefNet in FP32 takes ~14GB of memory with PyTorch, but ~40GB with onnxruntime at 1728x1728.
 
 #### Quantized Results (QAT)
 
-| Model                | Quantization Engine | mIoU         |
-|:---------------------|:--------------------|:-------------|
-| U<sup>2</sup>Net     | fbgemm (x86)        | 0.9582526028 |
-| U<sup>2</sup>Net     | qnnpack             | 0.9585405395 |
-| U<sup>2</sup>NetP    | fbgemm (x86)        | 0.9345262437 |
-| U<sup>2</sup>NetP    | qnnpack             | 0.9311561166 |
-| DeepLabV3MobileNetV3 | fbgemm (x86)        | 0.8624664545 |
-| DeepLabV3MobileNetV3 | qnnpack             | 0.8623675622 |
+##### Training Set
 
-\*Note: BiRefNet in FP32 takes ~14GB of memory with PyTorch, but ~40GB with onnxruntime at 1728x1728.
+| Model                | Quantization Engine | mIoU       | mIoU@0.5   | MAE        | HCE   |
+|:---------------------|:--------------------|:-----------|:-----------|:-----------|:------|
+| U<sup>2</sup>Net     | fbgemm (x86)        | 0.95669021 | 0.97555741 | 1.27610285 | 98.5  |
+| U<sup>2</sup>Net     | qnnpack             | 0.95695430 | 0.97582812 | 1.35306197 | 97.9  |
+| U<sup>2</sup>NetP    | fbgemm (x86)        | 0.93432550 | 0.95050526 | 2.12303022 | 120.5 |
+| U<sup>2</sup>NetP    | qnnpack             | 0.93109669 | 0.95057666 | 2.33878247 | 120.2 |
+| DeepLabV3MobileNetV3 | fbgemm (x86)        | 0.85428560 | 0.86595966 | 5.53276895 | 164.7 |
+| DeepLabV3MobileNetV3 | qnnpack             | 0.85433149 | 0.86604015 | 5.53080864 | 165.1 |
+
+Time: 32394.77s
+
+##### Evaluation Set
+
+| Model                | Quantization Engine | mIoU       | mIoU@0.5   | MAE         | HCE   |
+|:---------------------|:--------------------|:-----------|:-----------|:------------|:------|
+| U<sup>2</sup>Net     | fbgemm (x86)        | 0.90129324 | 0.91815587 | 2.29222730  | 357.6 |
+| U<sup>2</sup>Net     | qnnpack             | 0.90402319 | 0.92131388 | 2.40288605  | 354.9 |
+| U<sup>2</sup>NetP    | fbgemm (x86)        | 0.83576632 | 0.84978227 | 4.43336496  | 400.6 |
+| U<sup>2</sup>NetP    | qnnpack             | 0.82966553 | 0.84633177 | 4.80103991  | 398.7 |
+| DeepLabV3MobileNetV3 | fbgemm (x86)        | 0.63009295 | 0.63640658 | 14.55390057 | 430.8 |
+| DeepLabV3MobileNetV3 | qnnpack             | 0.62928274 | 0.63572706 | 14.70489649 | 430.7 |
+
+Time: 4684.89s
 
 ### Inference Time
 
