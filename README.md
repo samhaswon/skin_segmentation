@@ -7,9 +7,12 @@ teeth, and eyes are included in the mask.
 
 ## Usage
 
-For U<sup>2</sup>Net, U<sup>2</sup>NetP, and DLMV models, 
+For U<sup>2</sup>Net, U<sup>2</sup>NetP (including chunks), and DLMV models, 
 you can use the `Session` class in [`u2net/session.py`](./u2net/session.py) for ONNX Runtime inference.
-[`u2net/u2net_attempt.py`](./u2net/u2net_attempt.py) demonstrates the usage of this class.
+[`u2net/u2net_attempt.py`](./u2net/u2net_attempt.py) demonstrates the usage of this class. 
+The BiRefNetSession class in [`birefnet/session.py`](./birefnet/session.py) can be used for ONNX 
+inference of BiRefNet.
+
 
 Trying to figure out which model to use?
 Try looking at [Metrics](#metrics) and [Inference Time](#inference-time) and choose 
@@ -133,7 +136,7 @@ I couldn't fit half of the model (at 1728x1728) on my RTX 3060,
 so it took some creative programming to split it while maintaining some measure of training speed.
 
 Inference is a bit of a different story, with PyTorch only using something like 6GB of memory/VRAM.
-However, as a word of warning, the ONNX version takes ~**40GB** of memory for some reason. 
+However, as a word of warning, the ONNX version can take ~**40GB** of memory for some reason. 
 Depending on how much you value inference speed, you may consider this tradeoff worth it.
 
 In my testing, it is the new SOTA for this task, though by a limited margin. 
