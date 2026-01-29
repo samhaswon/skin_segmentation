@@ -10,9 +10,12 @@ teeth, and eyes are included in the mask.
 For U<sup>2</sup>Net, U<sup>2</sup>NetP (including chunks), and DLMV models, 
 you can use the `Session` class in [`u2net/session.py`](./u2net/session.py) for ONNX Runtime inference.
 [`u2net/u2net_attempt.py`](./u2net/u2net_attempt.py) demonstrates the usage of this class. 
+
 The BiRefNetSession class in [`birefnet/session.py`](./birefnet/session.py) can be used for ONNX 
 inference of BiRefNet. 
 Each folder further contains PyTorch session implementations.
+
+An example of chunked refinement inference can be found in [`chunks/chunked_u2net.py`](./chunks/chunked_u2net.py).
 
 Trying to figure out which model to use?
 Try looking at [Metrics](#metrics) and [Inference Time](#inference-time) and choose 
@@ -21,6 +24,8 @@ the most accurate model within your computing environment's budget.
 ### Some Potential Use Cases
 
 - Photomanipulation involving the correction of aspects of the skin such as pimples.
+
+  - Demo: [`examples/inpaint_demo.mp4`](./examples/inpaint_demo.mp4)
 
 - Hair segmentation, when combined with a human segmentation or SOD model and a human-in-the-loop (HITL) to remove the segmented clothes' region.
 
@@ -172,6 +177,11 @@ tend to do worse than easier images.
 Because it works similar to the traditional methods, it also fails similarly.
 It also succeeds weirdly, as we'll see later on.
 
+## U<sup>2</sup>-Net (Chunks)
+
+I did this for another project and because my dataset is high enough in resolution that most of the work was otherwise wasted. 
+So why not push inference to resolutions you wouldn't otherwise see, with up to 50MP in training.
+
 ## Examples
 
 ![](./examples/model_plot.jpg)
@@ -197,10 +207,19 @@ and introduced new model-specific idiosyncrasies.
 The weirdest of which being StraightU<sup>2</sup>-Net (`sunet`), 
 specifically because it's the only model that actually segmented this image correctly.
 
+### Chunk Refinement
+
+Making the refiner model for chunks/patches made for quite the improvement. 
+When it works well, it's basically perfect. 
+When it doesn't, it's not much of a help to the base model.
+
+![](./examples/boxes_comparison_0_0.jpg)
+![](./examples/boxes_comparison_1_0.jpg)
+
 ## Dataset Information
 
-The dataset used in this project consists of 1,204 images (1,134 training) with a combined 
-total of approximately 6.73×10⁹ labeled pixels (5.81×10⁹ training). 
+The dataset used in this project consists of 1,215 images (1,134 training) with a combined 
+total of approximately 6.92×10⁹ labeled pixels (5.81×10⁹ training). 
 Images were sourced from a variety of online 
 (e.g., Google Image search results, Instagram) and private 
 (e.g., my photography work, diffusion models) collections to maximize diversity of scene, 
@@ -478,6 +497,16 @@ Time: 32394.77s
 
 Time: 4684.89s
 
+#### Chunked Inference
+
+(evaluation set)
+
+|    Base Model     | mIoU | mIoU@0.5 | MAE | HCE |
+|:-----------------:|:-----|:---------|:----|:----|
+|     BirefNet      |      |          |     |     |
+| U<sup>2</sup>Net  |      |          |     |     |
+| U<sup>2</sup>NetP |      |          |     |     |
+
 ### Inference Time
 
 These results are from (mostly) CPU inferencing on a Ryzen 7 4800H with an Nvidia GTX 1650TI for CUDA running Ubuntu 24.04.
@@ -534,6 +563,16 @@ I got bored with waiting on it to do anything after hours, so there are no resul
 | DeepLabV3MobileNetV3 (onnxruntime)                           | 0.0120s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
 | DeepLabV3MobileNetV3 (onnxruntime qnnpack)                   | 0.0134s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
 | DeepLabV3MobileNetV3 (onnxruntime fbgemm)                    | 0.0139s | <hr>    | <hr>    | <hr>      | <hr>      | <hr>      | <hr>      |
+
+#### Chunk Times
+
+As a part of a related project, I got access to A100s to do some inference.
+So, if you happen to be able to use dual A100s for chunk inference, this is what those numbers look like.
+Mind you, this was after quite a lot of optimization.
+
+The base model used was BiRefNet. In total, there were 72 chunks for the patch model to process.
+
+![Example of A100 inference times. The base model took 0.3870s, the patch (chunk) model took 0.3052s, and the overall time was 1.6949s.](./examples/a100_timings.png)
 
 ## Qualitative Error Analysis
 
