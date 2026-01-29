@@ -11,8 +11,8 @@ For U<sup>2</sup>Net, U<sup>2</sup>NetP (including chunks), and DLMV models,
 you can use the `Session` class in [`u2net/session.py`](./u2net/session.py) for ONNX Runtime inference.
 [`u2net/u2net_attempt.py`](./u2net/u2net_attempt.py) demonstrates the usage of this class. 
 The BiRefNetSession class in [`birefnet/session.py`](./birefnet/session.py) can be used for ONNX 
-inference of BiRefNet.
-
+inference of BiRefNet. 
+Each folder further contains PyTorch session implementations.
 
 Trying to figure out which model to use?
 Try looking at [Metrics](#metrics) and [Inference Time](#inference-time) and choose 
