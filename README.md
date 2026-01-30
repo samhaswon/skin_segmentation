@@ -28,8 +28,11 @@ Check out this repo: https://github.com/samhaswon/csc6780-term-project
 
 - Photomanipulation involving the correction of aspects of the skin such as pimples.
 
-  - Inpainting demo: <br>
-    <video src="examples/inpaint_demo.mp4" type="video/mp4" width="342" height="342" controls></video>
+  - Inpainting demo: 
+
+https://github.com/user-attachments/assets/be76de6a-b11d-4f39-8184-744086c96c34
+
+
 
 - Hair segmentation, when combined with a human segmentation or SOD model and a human-in-the-loop (HITL) to remove the segmented clothes' region.
 
