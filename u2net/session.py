@@ -53,8 +53,7 @@ class Session:
             size = self.inner_session.get_inputs()[0].shape[2], self.inner_session.get_inputs()[0].shape[3]
         im = img.convert(convert_to).resize(size, Image.LANCZOS)
 
-        im_ary = np.array(im).astype(np.float32)
-        im_ary = (im_ary - np.min(im_ary)) / (np.max(im_ary) - np.min(im_ary))
+        im_ary = np.array(im).astype(np.float32) / 255.0
 
         tmp_img = im_ary.transpose((2, 0, 1))
 
