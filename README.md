@@ -21,11 +21,14 @@ Trying to figure out which model to use?
 Try looking at [Metrics](#metrics) and [Inference Time](#inference-time) and choose 
 the most accurate model within your computing environment's budget.
 
+Want to see an example of these models being used?
+Check out this repo: https://github.com/samhaswon/csc6780-term-project
+
 ### Some Potential Use Cases
 
 - Photomanipulation involving the correction of aspects of the skin such as pimples.
 
-  - Demo: [`examples/inpaint_demo.mp4`](./examples/inpaint_demo.mp4)
+  - Inpainting demo: [`examples/inpaint_demo.mp4`](./examples/inpaint_demo.mp4)
 
 - Hair segmentation, when combined with a human segmentation or SOD model and a human-in-the-loop (HITL) to remove the segmented clothes' region.
 
@@ -179,7 +182,7 @@ It also succeeds weirdly, as we'll see later on.
 
 ## U<sup>2</sup>-Net (Chunks)
 
-I did this for another project and because my dataset is high enough in resolution that most of the work was otherwise wasted. 
+I did this for another [project](https://github.com/samhaswon/csc6780-term-project) and because my dataset is high enough in resolution that most of the work was otherwise wasted. 
 So why not push inference to resolutions you wouldn't otherwise see, with up to 50MP in training.
 
 ## Examples
@@ -218,8 +221,8 @@ When it doesn't, it's not much of a help to the base model.
 
 ## Dataset Information
 
-The dataset used in this project consists of 1,215 images (1,134 training) with a combined 
-total of approximately 6.92×10⁹ labeled pixels (5.81×10⁹ training). 
+The dataset used in this project consists of 1,216 images (1,134 training) with a combined 
+total of approximately 6.96×10⁹ labeled pixels (5.81×10⁹ training). 
 Images were sourced from a variety of online 
 (e.g., Google Image search results, Instagram) and private 
 (e.g., my photography work, diffusion models) collections to maximize diversity of scene, 
@@ -449,19 +452,19 @@ Time: 89343.20s (~24.8 hours)
 
 | Model/Method              | mIoU       | mIoU@0.5   | MAE         | HCE    |
 |:--------------------------|:-----------|:-----------|:------------|:-------|
-| BiRefNet                  | 0.94676485 | 0.96104952 | 1.19378242  | 243.0  |
-| U<sup>2</sup>Net          | 0.91045846 | 0.92545818 | 1.89087316  | 357.4  |
-| U<sup>2</sup>NetP         | 0.81010457 | 0.82169437 | 7.78251227  | 404.5  |
-| StraightU<sup>2</sup>Net  | 0.81241271 | 0.82753460 | 5.02443159  | 426.7  |
-| DeepLabV3MobileNetV3      | 0.63919717 | 0.64474565 | 14.72501576 | 250.1  |
-| Google (MediaPipe)        | 0.53910064 | 0.54039942 | 34.66313170 | 588.1  |
-| ICM                       | 0.61323843 | 0.61692257 | 35.90004491 | 1812.6 |
-| Diagonal Elliptical YCbCr | 0.60055915 | 0.60407782 | 40.97930589 | 2173.1 |
-| Elliptical YCbCr          | 0.50804118 | 0.51063570 | 35.44894022 | 1834.5 |
-| YCbCr                     | 0.51649743 | 0.51923974 | 55.07992628 | 1918.7 |
-| YCbCr & HSV               | 0.54996273 | 0.55275393 | 37.92072090 | 2116.1 |
-| HSV                       | 0.52790392 | 0.53102479 | 42.32860969 | 2254.4 |
-| Face                      | 0.34798417 | 0.35025993 | 72.99048409 | 3051.5 |
+| BiRefNet                  | 0.95078197 | 0.96431441 | 1.13846406  | 218.1  |
+| U<sup>2</sup>Net          | 0.91900272 | 0.93312760 | 1.77361109  | 276.1  |
+| U<sup>2</sup>NetP         | 0.81913939 | 0.83019210 | 7.66510450  | 310.3  |
+| StraightU<sup>2</sup>Net  | 0.81821826 | 0.83248770 | 6.23616959  | 356.6  |
+| DeepLabV3MobileNetV3      | 0.65540375 | 0.66071213 | 14.67025902 | 220.9  |
+| Google (MediaPipe)        | 0.55579589 | 0.55700667 | 35.15274714 | 482.6  |
+| ICM                       | 0.62055383 | 0.62393307 | 34.90752014 | 1676.0 |
+| Diagonal Elliptical YCbCr | 0.60762614 | 0.61074735 | 40.07986746 | 1897.7 |
+| Elliptical YCbCr          | 0.52158137 | 0.52399477 | 38.98099503 | 1711.4 |
+| YCbCr                     | 0.53553124 | 0.53808545 | 56.83574937 | 1491.5 |
+| YCbCr & HSV               | 0.56219051 | 0.56487315 | 40.28673917 | 1878.5 |
+| HSV                       | 0.54106430 | 0.54405230 | 44.63998198 | 1942.1 |
+| Face                      | 0.35228740 | 0.35455905 | 70.11496282 | 2602.0 |
 
 Time: 11442.24s
 
@@ -488,24 +491,24 @@ Time: 32394.77s
 
 | Model                | Quantization Engine | mIoU       | mIoU@0.5   | MAE         | HCE   |
 |:---------------------|:--------------------|:-----------|:-----------|:------------|:------|
-| U<sup>2</sup>Net     | fbgemm (x86)        | 0.90129324 | 0.91815587 | 2.29222730  | 357.6 |
-| U<sup>2</sup>Net     | qnnpack             | 0.90402319 | 0.92131388 | 2.40288605  | 354.9 |
-| U<sup>2</sup>NetP    | fbgemm (x86)        | 0.83576632 | 0.84978227 | 4.43336496  | 400.6 |
-| U<sup>2</sup>NetP    | qnnpack             | 0.82966553 | 0.84633177 | 4.80103991  | 398.7 |
-| DeepLabV3MobileNetV3 | fbgemm (x86)        | 0.63009295 | 0.63640658 | 14.55390057 | 430.8 |
-| DeepLabV3MobileNetV3 | qnnpack             | 0.62928274 | 0.63572706 | 14.70489649 | 430.7 |
+| U<sup>2</sup>Net     | fbgemm (x86)        | 0.91131639 | 0.92721647 | 2.04782018  | 274.7 |
+| U<sup>2</sup>Net     | qnnpack             | 0.91367015 | 0.92994349 | 2.13429254  | 273.0 |
+| U<sup>2</sup>NetP    | fbgemm (x86)        | 0.84821305 | 0.86138324 | 4.39863700  | 302.3 |
+| U<sup>2</sup>NetP    | qnnpack             | 0.84268503 | 0.85858355 | 4.68695845  | 302.0 |
+| DeepLabV3MobileNetV3 | fbgemm (x86)        | 0.64375089 | 0.64992159 | 14.83924018 | 397.1 |
+| DeepLabV3MobileNetV3 | qnnpack             | 0.64348288 | 0.64969167 | 14.92561650 | 400.2 |
 
-Time: 4684.89s
+Time: 6548.92s
 
 #### Chunked Inference
 
 (evaluation set)
 
-|    Base Model     | mIoU | mIoU@0.5 | MAE | HCE |
-|:-----------------:|:-----|:---------|:----|:----|
-|     BirefNet      |      |          |     |     |
-| U<sup>2</sup>Net  |      |          |     |     |
-| U<sup>2</sup>NetP |      |          |     |     |
+|    Base Model     | mIoU               | mIoU@0.5           | MAE        | HCE   |
+|:-----------------:|:-------------------|:-------------------|:-----------|:------|
+|     BirefNet      | 0.9527391221493825 | 0.962896830505795  | 1.10493106 | 207.4 |
+| U<sup>2</sup>Net  | 0.9277886885142149 | 0.9371333954537787 | 2.06625062 | 246.5 |
+| U<sup>2</sup>NetP | 0.8624414666957356 | 0.8699439350606465 | 4.35943205 | 240.9 |
 
 ### Inference Time
 
@@ -528,6 +531,7 @@ Except for BiRefNet, which is special, they're all identical in that regard anyw
 
 Additionally, some of the BiRefNet tests in PyTorch just got stuck. 
 I got bored with waiting on it to do anything after hours, so there are no results for those tests.
+It might just be a CPU inference thing as some of it did work on a GPU.
 
 | Model                                                        | 256x256 | 320x320 | 512x512 | 1024x1024 | 1280x1280 | 1728x1728 | 2048x2048 |
 |:-------------------------------------------------------------|:--------|:--------|:--------|:----------|:----------|:----------|:----------|
@@ -568,9 +572,13 @@ I got bored with waiting on it to do anything after hours, so there are no resul
 
 As a part of a related project, I got access to A100s to do some inference.
 So, if you happen to be able to use dual A100s for chunk inference, this is what those numbers look like.
-Mind you, this was after quite a lot of optimization.
+Mind you, this was after quite a lot of optimization on the inference side, with a core-count optimized CPU.
+So that's why the total is relatively high.
+Even though the inference was relatively fast, the stitching is bound by the speed of a single core.
+If this was more that just a test done out of curiosity, I probably could have parallelized that.
 
 The base model used was BiRefNet. In total, there were 72 chunks for the patch model to process.
+For my chunk inference code, the count depends on both the size of the input and the output of the first model.
 
 ![Example of A100 inference times. The base model took 0.3870s, the patch (chunk) model took 0.3052s, and the overall time was 1.6949s.](./examples/a100_timings.png)
 
