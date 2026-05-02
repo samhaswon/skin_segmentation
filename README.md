@@ -17,6 +17,8 @@ Each folder further contains PyTorch session implementations.
 
 An example of chunked refinement inference can be found in [`chunks/chunked_u2net.py`](./chunks/chunked_u2net.py).
 
+Additionally, a C++ demo can be found in [`cpp_demo`](./cpp_demo).
+
 Trying to figure out which model to use?
 Try looking at [Metrics](#metrics) and [Inference Time](#inference-time) and choose 
 the most accurate model within your computing environment's budget.
@@ -28,11 +30,9 @@ Check out this repo: https://github.com/samhaswon/csc6780-term-project
 
 - Photomanipulation involving the correction of aspects of the skin such as pimples.
 
-  - Inpainting demo: 
+  - Inpainting demo:
 
 https://github.com/user-attachments/assets/be76de6a-b11d-4f39-8184-744086c96c34
-
-
 
 - Hair segmentation, when combined with a human segmentation or SOD model and a human-in-the-loop (HITL) to remove the segmented clothes' region.
 
