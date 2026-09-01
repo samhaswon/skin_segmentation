@@ -148,16 +148,21 @@ I couldn't fit half of the model (at 1728x1728) on my RTX 3060,
 so it took some creative programming to split it while maintaining some measure of training speed.
 
 Inference is a bit of a different story, with PyTorch only using something like 6GB of memory/VRAM.
-However, as a word of warning, the ONNX version can take ~**40GB** of memory for some reason. 
-Depending on how much you value inference speed, you may consider this tradeoff worth it.
+However, as a word of warning, the ONNX version (**opset-21**, release v0.0.2) can take ~**40GB** 
+of memory for some reason. 
+Depending on how much you value inference speed, you may consider this tradeoff worth it if you require
+that opset for your EP. 
+Hence, the inclusion of the **opset-22** export, which supports `DeformConv` natively.
+This drops memory usage for the CPU EP down to ~6.5 GB peak with faster inference 
+(see [Inference Time](#inference-time)).
 
 In my testing, it is the new SOTA for this task, though by a limited margin. 
 It's getting to the point of measuring how well the model follows my own variance, 
 rather than purely how usable a particular model is for the task.
 I try to stay consistent as I've made the dataset for this, 
 but this model is really showing how nondeterministic I am as a human.
-I would estimate that there's about 0.5-1% average variation in exactly what value is given for a particular pixel,
-mostly from me dealing with JPG compression artifacting in the images.
+I would estimate that there's about 0.5-1% average variation in exactly what value is given for a 
+particular pixel, mostly from me dealing with JPG compression artifacting in the images.
 
 Then there's the really difficult part of skin segmentation: translucent occlusion. 
 This is where BiRefNet pulls ahead of the other models as it is better at handling something translucent partially obscuring skin.
@@ -474,7 +479,8 @@ Time: 11442.24s
 
 Note: the traditional methods do not include part of the eyes and the lips, 
 so that is part of the worse performance you see here.
-Additionally, BiRefNet in FP32 takes ~14GB of memory with PyTorch, but ~40GB with onnxruntime at 1728x1728.
+Additionally, BiRefNet in FP32 takes ~14GB of memory with PyTorch, 
+but ~40GB with onnxruntime opset-21 at 1728x1728 and ~6.5GB with opset-22.
 
 #### Quantized Results (QAT)
 
