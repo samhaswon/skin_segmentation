@@ -548,7 +548,9 @@ It might just be a CPU inference thing as some of it did work on a GPU.
 | BiRefNet(\_lite) (torch)                                     | 0.6290s | 0.9046s | 2.6359s | 12.5315s  | 15.6293s  | 27.5822s  | 62.9691s  |
 | BiRefNet(\_lite) (torch, `inference_mode`)                   | 0.5694s | 0.8162s | 2.3019s | 10.7903s  | <hr>      | <hr>      | <hr>      |
 | BiRefNet(\_lite) (`torch.compile`)                           | 0.5058s | 0.8064s | 2.1033s | 10.7870s  | <hr>      | <hr>      | <hr>      |
-| BiRefNet(\_lite) (onnxruntime)                               | <hr>    | <hr>    | <hr>    | <hr>      | <hr>      | 18.8971s  | <hr>      |
+| BiRefNet(\_lite) (onnxruntime, opset-21 original)            | <hr>    | <hr>    | <hr>    | <hr>      | <hr>      | 18.8971s  | <hr>      |
+| BiRefNet(\_lite) (onnxruntime, opset-21 low mem)             | <hr>    | <hr>    | <hr>    | <hr>      | <hr>      | 28.3124s  | <hr>      |
+| BiRefNet(\_lite) (onnxruntime, opset-22)                     | <hr>    | <hr>    | <hr>    | <hr>      | <hr>      | 16.1235s  | <hr>      |
 | U<sup>2</sup>Net (torch)                                     | 0.3108s | 0.4828s | 1.2603s | 5.5562s   | 9.0918s   | 14.7011s  | 21.2722s  |
 | U<sup>2</sup>Net (torch, `inference_mode`)                   | 0.2896s | 0.4485s | 1.2012s | 5.3387s   | 8.4383s   | 15.6485s  | 21.8896s  |
 | U<sup>2</sup>Net (`torch.compile`)                           | 0.2170s | 0.4269s | 1.2449s | 5.6484s   | 7.2809s   | 15.9674s  | 23.3404s  |
