@@ -386,22 +386,27 @@ However, this is only used for training and not evaluation.
 
 ### Parameters and FLOPs
 
-FLOP count analysis was done with `fvcore`.
+FLOP count analysis was done with `torch.utils.flop_counter.FlopCounterMode`.
 Google (MediaPipe) is omitted due to its backend which I do not wish to learn.
-Do note that this process is imperfect, with some unsupported operators in each model. 
-BiRefNet has the most, with the CNN-based models having only a few like sigmoid.
-Additionally, BiRefNet (BiRefNet_lite) was not trained at 2048x2048 due to VRAM constraints.
+BiRefNet (BiRefNet_lite) was not trained at 2048x2048 due to VRAM constraints.
 
-|           Model           | Inference Size | GFLOPS  |   Params   |
-|:-------------------------:|:--------------:|:-------:|:----------:|
-|       BiRefNet_lite       |      2048      | 931.572 | 44,313,720 |
-|       BiRefNet_lite       |      1728      | 658.997 | 44,313,720 |
-|       BiRefNet_lite       |      1440      | 459.547 | 44,313,720 |
-|     U<sup>2</sup>Net      |      1024      | 604.007 | 44,009,869 |
-|     U<sup>2</sup>NetP     |      1024      | 205.082 | 1,131,181  |
-|     U<sup>2</sup>NetP     |      512       | 51.271  | 1,131,181  |
-| StraightU<sup>2</sup>Net  |      320       |  8.294  |   79,937   |
-|   DeepLabV3MobileNetV3    |      256       |  2.473  | 11,020,337 |
+|          Model           | Inference Size |  GFLOPS   |   Params   |
+|:------------------------:|:--------------:|:---------:|:----------:|
+|      BiRefNet_lite       |      2048      | 1,851.216 | 44,313,720 |
+|      BiRefNet_lite       |      1728      | 1,309.502 | 44,313,720 |
+|      BiRefNet_lite       |      1440      |  913.195  | 44,313,720 |
+|      BiRefNet_lite       |      1024      |  468.813  | 44,313,720 |
+|     U<sup>2</sup>Net     |      1024      | 1,200.092 | 44,009,869 |
+|     U<sup>2</sup>Net     |      768       |  675.052  | 44,009,869 |
+|     U<sup>2</sup>Net     |      512       |  300.023  | 44,009,869 |
+|     U<sup>2</sup>Net     |      320       |  117.196  | 44,009,869 |
+|    U<sup>2</sup>NetP     |      1024      |  404.605  | 1,131,181  |
+|    U<sup>2</sup>NetP     |      768       |  227.590  | 1,131,181  |
+|    U<sup>2</sup>NetP     |      512       |  101.151  | 1,131,181  |
+|    U<sup>2</sup>NetP     |      320       |  39.512   | 1,131,181  |
+| StraightU<sup>2</sup>Net |      320       |  16,227   |   79,937   |
+|   DeepLabV3MobileNetV3   |      320       |   7.675   | 11,020,337 |
+|   DeepLabV3MobileNetV3   |      256       |   4.913   | 11,020,337 |
 
 ### Metrics
 
